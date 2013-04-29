@@ -5,6 +5,10 @@
       <interface> nc.itf.xjjc.voucher.ISubjAssMapDataService</interface>
       <implementation> nc.impl.xjjc.voucher.SubjAssMapDataService</implementation>
     </component>
+    <component remote="true" tx="CMT" priority="0" singleton="true" supportAlias="false">
+      <interface> nc.itf.xjjc.voucher.IAccSubjMapDataService</interface>
+      <implementation> nc.impl.xjjc.voucher.AccSubjMapDataService</implementation>
+    </component>
   </public>
 </module>
 
