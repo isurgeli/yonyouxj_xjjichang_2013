@@ -933,7 +933,7 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 		getBillCardPanel().getHeadItem(FAKEOBJ_ID).getComponent()
 				.setEnabled(true);
 		if (m_curPk_subjbiz.equals(VoucherBizType.LIFTLANDFEE.getValue())
-				|| m_curPk_subjbiz.equals(VoucherBizType.LIFTLANDFEEIN.getValue()))
+				/*|| m_curPk_subjbiz.equals(VoucherBizType.LIFTLANDFEEIN.getValue())*/)
 			getBillCardPanel().getHeadItem(FAKEOBJ_ID).setRefType("<" + OtherChargePrjRefModel.class.getName() + ">"); // 收费项目
 		else if (m_curPk_subjbiz.equals(VoucherBizType.RENTREVED.getValue())
 				|| m_curPk_subjbiz.equals(VoucherBizType.RENTRECEIVABLE.getValue())

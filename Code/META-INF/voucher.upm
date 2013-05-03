@@ -2,12 +2,16 @@
 <module name="SCM_SO_EJB">
   <public>
     <component remote="true" tx="CMT" priority="0" singleton="true" supportAlias="false">
-      <interface> nc.itf.xjjc.voucher.ISubjAssMapDataService</interface>
-      <implementation> nc.impl.xjjc.voucher.SubjAssMapDataService</implementation>
+      <interface>nc.itf.xjjc.voucher.ISubjAssMapDataService</interface>
+      <implementation>nc.impl.xjjc.voucher.SubjAssMapDataService</implementation>
     </component>
     <component remote="true" tx="CMT" priority="0" singleton="true" supportAlias="false">
-      <interface> nc.itf.xjjc.voucher.IAccSubjMapDataService</interface>
-      <implementation> nc.impl.xjjc.voucher.AccSubjMapDataService</implementation>
+      <interface>nc.itf.xjjc.voucher.IAccSubjMapDataService</interface>
+      <implementation>nc.impl.xjjc.voucher.AccSubjMapDataService</implementation>
+    </component>
+    <component remote="true" tx="CMT" priority="0" singleton="true" supportAlias="false">
+      <interface>nc.itf.xjjc.voucher.IAirIncomeVoucherDataService</interface>
+      <implementation>nc.impl.xjjc.voucher.AirIncomeVoucherDataService</implementation>
     </component>
   </public>
 </module>

@@ -965,7 +965,6 @@ public class SubjAssMap extends ToftPanel implements TreeSelectionListener,
 			getBillCardPanel().getHeadItem(PK_FREEVALUE).setLoadFormula(formulas);
 			getBillListPanel().getHeadItem(PK_FREEVALUE).setLoadFormula(formulas);
 		} catch (BusinessException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
