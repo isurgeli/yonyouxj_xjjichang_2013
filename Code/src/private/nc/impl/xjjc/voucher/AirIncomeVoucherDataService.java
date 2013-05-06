@@ -5,13 +5,12 @@ import java.util.Date;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import org.apache.poi.hssf.record.formula.functions.Setvalue;
-
 import nc.bd.glorgbook.GlorgbookCache;
 import nc.bd.glorgbook.IGlorgbookAccessor;
 import nc.bs.dao.BaseDAO;
 import nc.bs.dao.DAOException;
 import nc.bs.framework.common.NCLocator;
+import nc.bs.uap.lock.PKLock;
 import nc.itf.gl.voucher.IVoucher;
 import nc.itf.uap.bd.accsubj.IAccsubjDataQuery;
 import nc.itf.uap.bd.accsubj.ISubjassQry;
@@ -64,7 +63,7 @@ public class AirIncomeVoucherDataService implements
 			
 			Hashtable<String, String> gendMap = new Hashtable<String, String>();
 			for(Vector<Object> gendata : gened) gendMap.put(gendata.get(0).toString(), gendata.get(0).toString());
-			// TODO 增加已生成凭证的发票过滤-查询待生成发票
+			// 增加已生成凭证的发票过滤-查询待生成发票
 			
 			for(Vector<Object> invoice : invoices){
 				if (!gendMap.containsKey(invoice.get(3).toString())){ // 过滤掉已生成凭证的发票
@@ -88,6 +87,13 @@ public class AirIncomeVoucherDataService implements
 	public FakeVoucherVO[] genVoucherForAirCorp(String sAccMonth,
 			String eAccMonth, String airPort, String airPortname, String pk_voucherType,
 			String explain, String[] airlines, boolean useDollar, UFDouble raito, String pk_user) throws BusinessException {
+		//先加动态锁
+		String[] pks = new String[airlines.length];
+		for(int i=0;i<airlines.length;i++)
+			pks[i]=airPort+airlines[i];
+		if (!PKLock.getInstance().addBatchDynamicLock(pks))
+			throw new BusinessException("其它人正在对指定机场下的航空公司进行生成凭证处理。");
+		
 		BaseDAO otherDao = new BaseDAO("xj_amdb");
 		BaseDAO ncDao = new BaseDAO();
 		ArrayList<FakeVoucherVO> retVO = new ArrayList<FakeVoucherVO>();
@@ -99,6 +105,7 @@ public class AirIncomeVoucherDataService implements
 		
 		Hashtable<String, String> gendMap = new Hashtable<String, String>();
 		for(Vector<Object> gendata : gened) gendMap.put(gendata.get(0).toString(), gendata.get(0).toString());
+		// 增加已生成凭证的发票过滤-生成凭证
 		try {
 			for(String airline : airlines){
 				@SuppressWarnings("unchecked")
@@ -113,7 +120,7 @@ public class AirIncomeVoucherDataService implements
 						+"' and xj_amdb.view_invoice.airport_code = '"+airPort
 						+"' and xj_amdb.view_invoice.payer_code = '"+airline
 						+"'", new VectorProcessor());
-				//TODO 增加已生成凭证的发票过滤-生成凭证
+				
 				
 				
 				for(int invoiceIdx=0;invoiceIdx<invoices.size();invoiceIdx++){

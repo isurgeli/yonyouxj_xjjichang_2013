@@ -14,8 +14,6 @@ import java.util.Vector;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
-import javax.swing.ListModel;
-import javax.swing.event.ListDataListener;
 
 import nc.bs.framework.common.NCLocator;
 import nc.itf.uap.IUAPQueryBS;
@@ -33,17 +31,17 @@ import nc.ui.pub.beans.UIRadioButton;
 import nc.ui.pub.beans.UIRefPane;
 import nc.ui.pub.beans.UIScrollPane;
 import nc.ui.pub.beans.UITextField;
+import nc.ui.pub.tools.BannerDialog;
 import nc.ui.xjjc.ref.voucher.BizTypeRefModel;
 import nc.ui.xjjc.ref.voucher.CheckListManager;
 import nc.ui.xjjc.ref.voucher.OtherDeptRefModel;
 import nc.vo.pub.BusinessException;
-import nc.vo.pub.CircularlyAccessibleValueObject;
 import nc.vo.pub.lang.UFDate;
 import nc.vo.pub.lang.UFDouble;
 import nc.vo.xjjc.voucher.AirCorpVO;
 import nc.vo.xjjc.voucher.FakeVoucherVO;
 
-public class AirIncomeVoucherGenDlg extends UIDialog {
+public class AirIncomeVoucherGenDlg extends UIDialog implements ActionListener, Runnable {
 	/**
 	 * 
 	 */
@@ -273,9 +271,10 @@ public class AirIncomeVoucherGenDlg extends UIDialog {
 			IUAPQueryBS dao = NCLocator.getInstance().lookup(IUAPQueryBS.class);
 			UFDate today = new UFDate();
 			try {
-				Vector data = (Vector)dao.executeQuery("select pk_accperiodmonth from bd_accperiodmonth where begindate<'"+today.toString()+
+				@SuppressWarnings("unchecked")
+				Vector<Vector<Object>> data = (Vector<Vector<Object>>)dao.executeQuery("select pk_accperiodmonth from bd_accperiodmonth where begindate<'"+today.toString()+
 						"' and enddate>'"+today.toString()+"'", new VectorProcessor());
-				if (data.size()>0) refStartPeriod.setPK(((Vector)data.get(0)).get(0).toString());
+				if (data.size()>0) refStartPeriod.setPK(data.get(0).get(0).toString());
 			} catch (BusinessException e) {
 				e.printStackTrace();
 			}
@@ -352,50 +351,7 @@ public class AirIncomeVoucherGenDlg extends UIDialog {
 	private UIButton getBtnOk() {
 		if (btnOk == null) {
 			btnOk = new UIButton("确定");
-			btnOk.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					UFDouble raito = new UFDouble(1.0);
-					if (getUseDollar().isSelected()){
-						try{
-							raito = new UFDouble(getDollarRatio().getText());
-						}
-						catch (Exception ex){
-							MessageDialog.showWarningDlg(null, null, "请填写正确的汇率。");
-							return;
-						}
-					}
-					
-					IAirIncomeVoucherDataService service = NCLocator.getInstance().lookup(IAirIncomeVoucherDataService.class);
-					String pk_voucherType = getRefVoucherType().getRefPK();
-					String explain = getTextExplain().getText();
-					
-					boolean haveForeign = false;
-					ArrayList<String> selectAirCorp = new ArrayList<String>();
-					for(int i=0;i<airCorps.length;i++)
-						if (checkListManager.getSelectionModel().isSelectedIndex(i)){
-							selectAirCorp.add(airCorps[i].getCode());
-							if (airCorps[i].getType()==2) haveForeign = true;
-						}
-					
-					boolean useDollar = false;
-					
-					if (haveForeign){
-						useDollar = getUseDollar().isSelected();
-						raito = useDollar?new UFDouble(getDollarRatio().getText()):new UFDouble(1);
-					}
-					
-					try {
-						retData = service.genVoucherForAirCorp(sAccMonth, eAccMonth, airPort, airPortname, 
-								pk_voucherType, explain, selectAirCorp.toArray(new String[0]), useDollar, raito, m_userID);
-					} catch (BusinessException ex) {
-						MessageDialog.showWarningDlg(null, null, ex.getMessage());
-						ex.printStackTrace();
-						return;
-					}
-					
-					closeOK();
-				}
-			});
+			btnOk.addActionListener(this);
 		}
 		return btnOk;
 	}
@@ -440,5 +396,69 @@ public class AirIncomeVoucherGenDlg extends UIDialog {
 			});
 		}
 		return btnQuery;
+	}
+
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		new Thread(this).start();
+	}
+
+	private void genrateTheVoucher() {
+		UFDouble raito = new UFDouble(1.0);
+		if (getUseDollar().isSelected()){
+			try{
+				raito = new UFDouble(getDollarRatio().getText());
+			}
+			catch (Exception ex){
+				MessageDialog.showWarningDlg(null, null, "请填写正确的汇率。");
+				return;
+			}
+		}
+		
+		IAirIncomeVoucherDataService service = NCLocator.getInstance().lookup(IAirIncomeVoucherDataService.class);
+		String pk_voucherType = getRefVoucherType().getRefPK();
+		String explain = getTextExplain().getText();
+		
+		boolean haveForeign = false;
+		ArrayList<String> selectAirCorp = new ArrayList<String>();
+		for(int i=0;i<airCorps.length;i++)
+			if (checkListManager.getSelectionModel().isSelectedIndex(i)){
+				selectAirCorp.add(airCorps[i].getCode());
+				if (airCorps[i].getType()==2) haveForeign = true;
+			}
+		
+		boolean useDollar = false;
+		
+		if (haveForeign){
+			useDollar = getUseDollar().isSelected();
+			raito = useDollar?new UFDouble(getDollarRatio().getText()):new UFDouble(1);
+		}
+		
+		try {
+			retData = service.genVoucherForAirCorp(sAccMonth, eAccMonth, airPort, airPortname, 
+					pk_voucherType, explain, selectAirCorp.toArray(new String[0]), useDollar, raito, m_userID);
+		} catch (BusinessException ex) {
+			MessageDialog.showWarningDlg(null, null, ex.getMessage());
+			ex.printStackTrace();
+			return;
+		}
+		
+		closeOK();
+	}
+
+	@Override
+	public void run() {
+		BannerDialog dialog = new BannerDialog(this);
+		dialog.setStartText("凭证生成中。。。请稍候！");
+		try {
+			dialog.start();
+			Thread.sleep(500); //等待1秒
+			genrateTheVoucher();
+		}catch (Exception e) {
+			MessageDialog.showHintDlg(null, "错误", e.getMessage());
+		} finally {
+			dialog.end();
+		}
 	}
 }

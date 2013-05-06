@@ -33,6 +33,7 @@ public class SubjAssMapDataService implements ISubjAssMapDataService {
 	@Override
 	public AssValueMapVO[] queryAllMap(String strWhere) throws BusinessException  {
 		try {
+			@SuppressWarnings("unchecked")
 			ArrayList<AssValueMapVO> data = (ArrayList<AssValueMapVO>)getDao().
 					retrieveByClause(AssValueMapVO.class, strWhere);
 			return data.toArray(new AssValueMapVO[0]);
