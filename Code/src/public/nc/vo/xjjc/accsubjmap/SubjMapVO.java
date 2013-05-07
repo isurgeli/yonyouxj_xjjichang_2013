@@ -30,6 +30,8 @@ public class SubjMapVO extends SuperVO {
 	private java.lang.String vmemo;
 	private java.lang.Integer obj_id;
 	private java.lang.String currency;
+	private java.lang.String pk_suspendsubj;
+	private java.lang.String pk_advancesubj;
 	private java.lang.Integer dr;
 	private nc.vo.pub.lang.UFDateTime ts;
 
@@ -45,6 +47,8 @@ public class SubjMapVO extends SuperVO {
 	public static final String VMEMO = "vmemo";
 	public static final String OBJ_ID = "obj_id";
 	public static final String CURRENCY = "currency";
+	public static final String PK_SUSPENDSUBJ = "pk_suspendsubj";
+	public static final String PK_ADVANCESUBJ = "pk_advancesubj";
 			
 	/**
 	 * 属性pk_subjmap的Getter方法.
@@ -237,6 +241,38 @@ public class SubjMapVO extends SuperVO {
 	 */
 	public void setCurrency (java.lang.String newCurrency ) {
 	 	this.currency = newCurrency;
+	} 	  
+	/**
+	 * 属性pk_suspendsubj的Getter方法.
+	 * 创建日期:2013-04-26 15:13:53
+	 * @return java.lang.String
+	 */
+	public java.lang.String getPk_suspendsubj () {
+		return pk_suspendsubj;
+	}   
+	/**
+	 * 属性pk_suspendsubj的Setter方法.
+	 * 创建日期:2013-04-26 15:13:53
+	 * @param newPk_suspendsubj java.lang.String
+	 */
+	public void setPk_suspendsubj (java.lang.String newPk_suspendsubj ) {
+	 	this.pk_suspendsubj = newPk_suspendsubj;
+	} 	  
+	/**
+	 * 属性pk_advancesubj的Getter方法.
+	 * 创建日期:2013-04-26 15:13:53
+	 * @return java.lang.String
+	 */
+	public java.lang.String getPk_advancesubj () {
+		return pk_advancesubj;
+	}   
+	/**
+	 * 属性pk_advancesubj的Setter方法.
+	 * 创建日期:2013-04-26 15:13:53
+	 * @param newPk_advancesubj java.lang.String
+	 */
+	public void setPk_advancesubj (java.lang.String newPk_advancesubj ) {
+	 	this.pk_advancesubj = newPk_advancesubj;
 	} 	  
 	/**
 	 * 属性dr的Getter方法.

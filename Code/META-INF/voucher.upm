@@ -13,6 +13,14 @@
       <interface>nc.itf.xjjc.voucher.IAirIncomeVoucherDataService</interface>
       <implementation>nc.impl.xjjc.voucher.AirIncomeVoucherDataService</implementation>
     </component>
+    <component remote="true" tx="CMT" priority="0" singleton="true" supportAlias="false">
+      <interface>nc.itf.xjjc.rentvoucher.IRentVoucherDataService</interface>
+      <implementation>nc.bs.xjjc.rentvoucher.RentVoucherDataService</implementation>
+    </component>
+    <component remote="true" tx="CMT" priority="0" singleton="true" supportAlias="false">
+      <interface>nc.itf.xjjc.personloan.IXjjcPersonLoan</interface>
+      <implementation>nc.bs.xjjc.personloan.XjjcPersonLoanImpl</implementation>
+    </component>
   </public>
 </module>
 

@@ -20,6 +20,7 @@ import nc.ui.pub.linkoperate.ILinkMaintainData;
 import nc.ui.trade.query.HYQueryConditionDLG;
 import nc.ui.trade.query.INormalQuery;
 import nc.ui.uap.sf.SFClientUtil;
+import nc.ui.xjjc.rentvoucher.RentIncomeVoucherGenDlg;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.CircularlyAccessibleValueObject;
 import nc.vo.pub.lang.UFDouble;
@@ -40,6 +41,8 @@ public class AirIncomeVoucher extends ToftPanel implements BillEditListener {
 	private ButtonObject m_GenVoucher;
 	
 	private ButtonObject m_ShowVoucher;
+	
+	private ButtonObject m_RentVoucher;
 
 	private ButtonObject[] m_Ary;
 
@@ -78,8 +81,10 @@ public class AirIncomeVoucher extends ToftPanel implements BillEditListener {
 			m_GenVoucher.setEnabled(true);
 			m_ShowVoucher = new ButtonObject("查看凭证" ,"查看凭证", 2, "查看凭证");
 			m_ShowVoucher.setEnabled(true);
+			m_RentVoucher = new ButtonObject("转租赁凭证" ,"转租赁凭证", 2, "转租赁凭证");
+			m_RentVoucher.setEnabled(true);
 
-			m_Ary = new ButtonObject[] { m_Query, m_GenVoucher, m_ShowVoucher};
+			m_Ary = new ButtonObject[] { m_Query, m_GenVoucher, m_ShowVoucher, m_RentVoucher};
 			setButtons(m_Ary);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -141,7 +146,17 @@ public class AirIncomeVoucher extends ToftPanel implements BillEditListener {
 			showHintMessage("开始生成业务凭证。");
 			doGenVoucher();
 			showHintMessage("结束生成业务凭证。");
+		} else if(bo == m_RentVoucher){
+			showHintMessage("开始生成租赁业务凭证。");
+			doGenRentVoucher();
+			showHintMessage("结束生成租赁业务凭证。");
 		}
+	}
+
+	private void doGenRentVoucher() {
+		RentIncomeVoucherGenDlg dlg = new RentIncomeVoucherGenDlg(this);
+		dlg.setM_userID(m_userID);
+		dlg.showModal();
 	}
 
 	private void doGenVoucher() {

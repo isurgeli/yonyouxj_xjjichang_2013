@@ -24,13 +24,27 @@ insert into XJJC_BD_ACCSUBJBIZTYPE (DR, PK_SUBJBIZTYPE, TS, VCODE, VNAME)
 values (0, 'XJJC0000000000000008', '2013-04-29 19:34:07', '02', '租赁收入凭证');
 
 insert into XJJC_BD_ACCSUBJBIZTYPE (DR, PK_SUBJBIZTYPE, TS, VCODE, VNAME)
-values (0, 'XJJC0000000000000009', '2013-04-29 19:34:07', '0201', '业务收入');
+values (0, 'XJJC0000000000000009', '2013-04-29 19:34:07', '0201', '租赁收入');
 
-insert into XJJC_BD_ACCSUBJBIZTYPE (DR, PK_SUBJBIZTYPE, TS, VCODE, VNAME)
-values (0, 'XJJC0000000000000010', '2013-04-29 19:34:07', '0202', '应收款');
+--人员借支表
+drop table xjjc_gl_personloan;
+create table xjjc_gl_personloan(
+pk_psnbasdoc char(20) CONSTRAINT pk_xjjc_psnbasdoc PRIMARY KEY,
+nloan decimal(28,8) not null,
+"TS" CHAR(19) DEFAULT to_char(sysdate,'yyyy-mm-dd hh24:mi:ss'), 
+"DR" NUMBER(10,0) DEFAULT 0);
 
-insert into XJJC_BD_ACCSUBJBIZTYPE (DR, PK_SUBJBIZTYPE, TS, VCODE, VNAME)
-values (0, 'XJJC0000000000000011', '2013-04-29 19:34:07', '0203', '结转租金');
+--人员借支视图
+create view view_personlon as (select bd_psndoc.psncode,
+       bd_psndoc.psnname,
+       bd_corp.unitname,
+       bd_deptdoc.deptname,
+       xjjc_gl_personloan.nloan
+  from bd_deptdoc, bd_corp, xjjc_gl_personloan, bd_psndoc
+ where bd_psndoc.pk_deptdoc = bd_deptdoc.pk_deptdoc
+   and bd_psndoc.pk_corp = bd_corp.pk_corp
+   and bd_psndoc.pk_psndoc = xjjc_gl_personloan.pk_psnbasdoc);
+
 
 --辅助项对照单据模板
 insert into pub_billtemplet(BILL_TEMPLETCAPTION,BILL_TEMPLETNAME,DR,METADATACLASS,MODEL_TYPE,NODECODE,OPTIONS,PK_BILLTEMPLET,PK_BILLTYPECODE,PK_CORP,RESID,SHAREFLAG,TS,VALIDATEFORMULA) values( '辅助项对照','SYSTEM',0,'freevalue_map.freevaluemap',null,null,null,'0001AA10000000000VN0','10081831','@@@@',null,'N','2013-04-27 14:46:56',null);

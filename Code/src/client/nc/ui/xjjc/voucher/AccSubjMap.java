@@ -58,29 +58,19 @@ import nc.vo.xjjc.accsubjmap.SubjMapVO;
  */
 public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 		BillEditListener, MouseListener {
-	private static final String CURRENCY = "currency";
+	private static final String ADVANCESUBJNAME = "advancesubjname";
+
+	private static final String ADVANCESUBJCODE = "advancesubjcode";
+
+	private static final String SUSPENDSUBJNAME = "suspendsubjname";
+
+	private static final String SUSPENDSUBJCODE = "suspendsubjcode";
 
 	private static final String GET_VNAME = "getVname";
 
 	private static final String GET_VCODE = "getVcode";
 
-	private static final String PK_SUBJBIZ = "pk_subjbiz";
-
-	private static final String PK_CORP = "pk_corp";
-
-	private static final String VOTHERBIZ = "votherbiz";
-
-	private static final String OBJ_ID = "obj_id";
-
-	private static final String VOTHERNAME = "vothername";
-
-	private static final String VOTHERCODE = "vothercode";
-
 	private static final String FAKEOBJ_ID = "fakeobj_id";
-
-	private static final String PK_DEBITSUBJ = "pk_debitsubj";
-
-	private static final String PK_CREDITSUBJ = "pk_creditsubj";
 
 	/**
 	 * 
@@ -155,18 +145,18 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 	 *            nc.ui.pub.bill.BillEditEvent
 	 */
 	public void afterEdit(BillEditEvent e) {
-		if (e.getKey().equals(PK_CREDITSUBJ) || e.getKey().equals(PK_DEBITSUBJ)) 
+		if (e.getKey().equals(SubjMapVO.PK_CREDITSUBJ) || e.getKey().equals(SubjMapVO.PK_DEBITSUBJ)) 
 			getBillCardPanel().execHeadEditFormulas();
 		else if (e.getKey().equals(FAKEOBJ_ID)) {
 			UIRefPane ref = (nc.ui.pub.beans.UIRefPane)getBillCardPanel().getHeadItem(FAKEOBJ_ID).getComponent();
 			Vector cur = ref.getRefModel().getSelectedData();
 			if (cur!=null && cur.size()>0){
-				getBillCardPanel().getHeadItem(VOTHERCODE).setValue(((Vector)cur.get(0)).get(0));
-				getBillCardPanel().getHeadItem(VOTHERNAME).setValue(((Vector)cur.get(0)).get(1));
-				getBillCardPanel().getHeadItem(OBJ_ID).setValue(Integer.parseInt(((Vector)cur.get(0)).get(2).toString()));
+				getBillCardPanel().getHeadItem(SubjMapVO.VOTHERCODE).setValue(((Vector)cur.get(0)).get(0));
+				getBillCardPanel().getHeadItem(SubjMapVO.VOTHERNAME).setValue(((Vector)cur.get(0)).get(1));
+				getBillCardPanel().getHeadItem(SubjMapVO.OBJ_ID).setValue(Integer.parseInt(((Vector)cur.get(0)).get(2).toString()));
 				if (((Vector)cur.get(0)).size()>4){
-					getBillCardPanel().getHeadItem(VOTHERBIZ).setValue(((Vector)cur.get(0)).get(3));
-					getBillCardPanel().getHeadItem(CURRENCY).setValue(((Vector)cur.get(0)).get(4));
+					getBillCardPanel().getHeadItem(SubjMapVO.VOTHERBIZ).setValue(((Vector)cur.get(0)).get(3));
+					getBillCardPanel().getHeadItem(SubjMapVO.CURRENCY).setValue(((Vector)cur.get(0)).get(4));
 				}
 			}
 		}
@@ -304,8 +294,8 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 		tempBillCardPanel.addNew();
 
 		/* 设置系统处理字段 */
-		tempBillCardPanel.getHeadItem(PK_CORP).setValue(getPKCorp());
-		tempBillCardPanel.getHeadItem(PK_SUBJBIZ).setValue(m_curPk_subjbiz);
+		tempBillCardPanel.getHeadItem(SubjMapVO.PK_CORP).setValue(getPKCorp());
+		tempBillCardPanel.getHeadItem(SubjMapVO.PK_SUBJBIZ).setValue(m_curPk_subjbiz);
 
 		/* 切换至卡片模板 */
 		((CardLayout) m_mainDataPanel.getLayout()).show(m_mainDataPanel, tempBillCardPanel.getName());
@@ -419,7 +409,7 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 
 		/* add to address panel */
 		((CardLayout) m_mainDataPanel.getLayout()).show(m_mainDataPanel,tempBillCardPanel.getName());
-		getBillCardPanel().getHeadItem(FAKEOBJ_ID).setValue(getBillCardPanel().getHeadItem(OBJ_ID).getValueObject().toString());
+		getBillCardPanel().getHeadItem(FAKEOBJ_ID).setValue(getBillCardPanel().getHeadItem(SubjMapVO.OBJ_ID).getValueObject().toString());
 		((UIRefPane) getBillCardPanel().getHeadItem(FAKEOBJ_ID).getComponent()).getUITextField().grabFocus();
 	}
 
@@ -760,8 +750,8 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 
 		tempBillListPanel = getBillListPanel();
 
-		strWhere = PK_CORP+" = '" + getPKCorp() + "' and "+PK_SUBJBIZ+" = '"
-					+ m_curPk_subjbiz + "'";
+		strWhere = SubjMapVO.PK_CORP+" = '" + getPKCorp() + "' and "+SubjMapVO.PK_SUBJBIZ+" = '"
+					+ m_curPk_subjbiz + "' order by "+SubjMapVO.VOTHERBIZ+","+SubjMapVO.VOTHERCODE;
 
 		try {
 			resultVOs = getAccSubjMapDataService().queryAllMap(strWhere);
@@ -800,6 +790,7 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 
 		/* show address panel */
 		((CardLayout) m_mainDataPanel.getLayout()).show(m_mainDataPanel, tempBillListPanel.getName());
+		setSusandAdvSubjVisibility(false);
 	}
 
 	/**
@@ -933,17 +924,36 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 		getBillCardPanel().getHeadItem(FAKEOBJ_ID).getComponent()
 				.setEnabled(true);
 		if (m_curPk_subjbiz.equals(VoucherBizType.LIFTLANDFEE.getValue())
-				/*|| m_curPk_subjbiz.equals(VoucherBizType.LIFTLANDFEEIN.getValue())*/)
+				/*|| m_curPk_subjbiz.equals(VoucherBizType.LIFTLANDFEEIN.getValue())*/){
 			getBillCardPanel().getHeadItem(FAKEOBJ_ID).setRefType("<" + OtherChargePrjRefModel.class.getName() + ">"); // 收费项目
-		else if (m_curPk_subjbiz.equals(VoucherBizType.RENTREVED.getValue())
-				|| m_curPk_subjbiz.equals(VoucherBizType.RENTRECEIVABLE.getValue())
-				|| m_curPk_subjbiz.equals(VoucherBizType.ADVANCEREVCHANGE.getValue()))
+			setSusandAdvSubjVisibility(false);
+		}
+		else if (m_curPk_subjbiz.equals(VoucherBizType.RENTREVED.getValue())){
 			getBillCardPanel().getHeadItem(FAKEOBJ_ID).setRefType("<" + OtherRentPrjRefModel.class.getName() + ">"); // 租赁收费项目
+			setSusandAdvSubjVisibility(true);
+		}
 		else {
 			getBillCardPanel().getHeadItem(FAKEOBJ_ID).getComponent().setEnabled(false);
 			m_curPk_subjbiz = null;
+			setSusandAdvSubjVisibility(false);
 		}
 			
+	}
+	
+	private void setSusandAdvSubjVisibility(boolean visible){
+		getBillCardPanel().getHeadItem(SubjMapVO.PK_SUSPENDSUBJ).setShow(visible);
+		getBillCardPanel().getHeadItem(SUSPENDSUBJCODE).setShow(visible);
+		getBillCardPanel().getHeadItem(SUSPENDSUBJNAME).setShow(visible);
+		getBillCardPanel().getHeadItem(SubjMapVO.PK_ADVANCESUBJ).setShow(visible);
+		getBillCardPanel().getHeadItem(ADVANCESUBJCODE).setShow(visible);
+		getBillCardPanel().getHeadItem(ADVANCESUBJNAME).setShow(visible);
+		
+		getBillListPanel().getHeadItem(SubjMapVO.PK_SUSPENDSUBJ).setShow(visible);
+		getBillListPanel().getHeadItem(SUSPENDSUBJCODE).setShow(visible);
+		getBillListPanel().getHeadItem(SUSPENDSUBJNAME).setShow(visible);
+		getBillListPanel().getHeadItem(SubjMapVO.PK_ADVANCESUBJ).setShow(visible);
+		getBillListPanel().getHeadItem(ADVANCESUBJCODE).setShow(visible);
+		getBillListPanel().getHeadItem(ADVANCESUBJNAME).setShow(visible);
 	}
 
 	/**
@@ -1002,7 +1012,8 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 			tempBillListPanel = getBillListPanel();
 
 			/* 加载数据 */
-			strWhere = "("+PK_CORP+" = '" + getPKCorp() +"') and "+PK_SUBJBIZ+" = '" + m_curPk_subjbiz +"'";
+			strWhere = "("+SubjMapVO.PK_CORP+" = '" + getPKCorp() +"') and "+SubjMapVO.PK_SUBJBIZ+" = '" 
+					+ m_curPk_subjbiz +"' order by "+SubjMapVO.VOTHERBIZ+","+SubjMapVO.VOTHERCODE;
 
 			try {
 				resultVOs = getAccSubjMapDataService().queryAllMap(strWhere);
@@ -1025,11 +1036,11 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 			break;
 
 		case _ADD_:
-			getBillCardPanel().getHeadItem(PK_SUBJBIZ).setValue(m_curPk_subjbiz);
+			getBillCardPanel().getHeadItem(SubjMapVO.PK_SUBJBIZ).setValue(m_curPk_subjbiz);
 			break;
 
 		case _EDIT_:
-			getBillCardPanel().getHeadItem(PK_SUBJBIZ).setValue(m_curPk_subjbiz);
+			getBillCardPanel().getHeadItem(SubjMapVO.PK_SUBJBIZ).setValue(m_curPk_subjbiz);
 			break;
 
 		default:
