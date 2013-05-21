@@ -7,7 +7,7 @@ import nc.vo.xjjc.freevaluemap.UsedFreeValueVO;
 public interface ISubjAssMapDataService {
 	UsedFreeValueVO[] queryUesdAssSubjByCorpPk(String pk_corp) throws BusinessException;
 
-	AssValueMapVO[] queryAllMap(String strWhere) throws BusinessException;
+	AssValueMapVO[] queryAllSubjAssMap(String strWhere) throws BusinessException;
 
 	void deleteMap(AssValueMapVO map_vo) throws BusinessException;
 

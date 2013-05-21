@@ -754,7 +754,7 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 					+ m_curPk_subjbiz + "' order by "+SubjMapVO.VOTHERBIZ+","+SubjMapVO.VOTHERCODE;
 
 		try {
-			resultVOs = getAccSubjMapDataService().queryAllMap(strWhere);
+			resultVOs = getAccSubjMapDataService().queryAllSubjMap(strWhere);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -941,19 +941,25 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 	}
 	
 	private void setSusandAdvSubjVisibility(boolean visible){
-		getBillCardPanel().getHeadItem(SubjMapVO.PK_SUSPENDSUBJ).setShow(visible);
-		getBillCardPanel().getHeadItem(SUSPENDSUBJCODE).setShow(visible);
-		getBillCardPanel().getHeadItem(SUSPENDSUBJNAME).setShow(visible);
-		getBillCardPanel().getHeadItem(SubjMapVO.PK_ADVANCESUBJ).setShow(visible);
-		getBillCardPanel().getHeadItem(ADVANCESUBJCODE).setShow(visible);
-		getBillCardPanel().getHeadItem(ADVANCESUBJNAME).setShow(visible);
+		getBillCardPanel().getHeadItem(SubjMapVO.PK_SUSPENDSUBJ).setEnabled(visible);
+		getBillCardPanel().getHeadItem(SUSPENDSUBJCODE).setEnabled(visible);
+		getBillCardPanel().getHeadItem(SUSPENDSUBJNAME).setEnabled(visible);
+		getBillCardPanel().getHeadItem(SubjMapVO.PK_ADVANCESUBJ).setEnabled(visible);
+		getBillCardPanel().getHeadItem(ADVANCESUBJCODE).setEnabled(visible);
+		getBillCardPanel().getHeadItem(ADVANCESUBJNAME).setEnabled(visible);
 		
-		getBillListPanel().getHeadItem(SubjMapVO.PK_SUSPENDSUBJ).setShow(visible);
-		getBillListPanel().getHeadItem(SUSPENDSUBJCODE).setShow(visible);
-		getBillListPanel().getHeadItem(SUSPENDSUBJNAME).setShow(visible);
-		getBillListPanel().getHeadItem(SubjMapVO.PK_ADVANCESUBJ).setShow(visible);
-		getBillListPanel().getHeadItem(ADVANCESUBJCODE).setShow(visible);
-		getBillListPanel().getHeadItem(ADVANCESUBJNAME).setShow(visible);
+		getBillCardPanel().getHeadItem(SubjMapVO.PK_SUSPENDSUBJ).setNull(visible);
+		getBillCardPanel().getHeadItem(SubjMapVO.PK_ADVANCESUBJ).setNull(visible);
+		
+		getBillListPanel().getHeadItem(SubjMapVO.PK_SUSPENDSUBJ).setEnabled(visible);
+		getBillListPanel().getHeadItem(SUSPENDSUBJCODE).setEnabled(visible);
+		getBillListPanel().getHeadItem(SUSPENDSUBJNAME).setEnabled(visible);
+		getBillListPanel().getHeadItem(SubjMapVO.PK_ADVANCESUBJ).setEnabled(visible);
+		getBillListPanel().getHeadItem(ADVANCESUBJCODE).setEnabled(visible);
+		getBillListPanel().getHeadItem(ADVANCESUBJNAME).setEnabled(visible);
+		
+		getBillListPanel().getHeadItem(SubjMapVO.PK_SUSPENDSUBJ).setNull(visible);
+		getBillListPanel().getHeadItem(SubjMapVO.PK_ADVANCESUBJ).setNull(visible);
 	}
 
 	/**
@@ -1016,7 +1022,7 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 					+ m_curPk_subjbiz +"' order by "+SubjMapVO.VOTHERBIZ+","+SubjMapVO.VOTHERCODE;
 
 			try {
-				resultVOs = getAccSubjMapDataService().queryAllMap(strWhere);
+				resultVOs = getAccSubjMapDataService().queryAllSubjMap(strWhere);
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}

@@ -16,7 +16,6 @@ public class AccSubjMapDataService implements IAccSubjMapDataService {
 		return dao;
 	}
 	
-	@Override
 	public BizTypeVO[] queryBizType() throws BusinessException {
 		try {
 			@SuppressWarnings("unchecked")
@@ -28,8 +27,7 @@ public class AccSubjMapDataService implements IAccSubjMapDataService {
 		}
 	}
 
-	@Override
-	public SubjMapVO[] queryAllMap(String strWhere) throws BusinessException {
+	public SubjMapVO[] queryAllSubjMap(String strWhere) throws BusinessException {
 		try {
 			@SuppressWarnings("unchecked")
 			ArrayList<SubjMapVO> data = (ArrayList<SubjMapVO>)getDao().
@@ -40,7 +38,6 @@ public class AccSubjMapDataService implements IAccSubjMapDataService {
 		}
 	}
 
-	@Override
 	public void deleteMap(SubjMapVO map_vo) throws BusinessException {
 		try {
 			getDao().deleteVO(map_vo);
@@ -49,7 +46,6 @@ public class AccSubjMapDataService implements IAccSubjMapDataService {
 		}
 	}
 
-	@Override
 	public void insertMap(SubjMapVO map_vo) throws BusinessException {
 		try {
 			getDao().insertVO(map_vo);
@@ -58,7 +54,6 @@ public class AccSubjMapDataService implements IAccSubjMapDataService {
 		}
 	}
 
-	@Override
 	public void updateMap(SubjMapVO map_vo) throws BusinessException {
 		try {
 			getDao().updateVO(map_vo);

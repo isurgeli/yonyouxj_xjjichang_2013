@@ -251,7 +251,7 @@ public class AirIncomeVoucherGenDlg extends UIDialog implements ActionListener, 
 	private UIRefPane getComboBizType() {
 		if (comboBizType==null){
 			comboBizType = new UIRefPane();
-			comboBizType.setRefModel(new BizTypeRefModel());
+			comboBizType.setRefModel(new BizTypeRefModel(1));
 			comboBizType.setPK(VoucherBizType.LIFTLANDFEE.getValue());
 		}
 		return comboBizType;
@@ -398,10 +398,9 @@ public class AirIncomeVoucherGenDlg extends UIDialog implements ActionListener, 
 		return btnQuery;
 	}
 
-
-	@Override
 	public void actionPerformed(ActionEvent e) {
 		new Thread(this).start();
+		//genrateTheVoucher();
 	}
 
 	private void genrateTheVoucher() {
@@ -439,7 +438,7 @@ public class AirIncomeVoucherGenDlg extends UIDialog implements ActionListener, 
 			retData = service.genVoucherForAirCorp(sAccMonth, eAccMonth, airPort, airPortname, 
 					pk_voucherType, explain, selectAirCorp.toArray(new String[0]), useDollar, raito, m_userID);
 		} catch (BusinessException ex) {
-			MessageDialog.showWarningDlg(null, null, ex.getMessage());
+			MessageDialog.showWarningDlg(this, "¥ÌŒÛ", ex.getMessage());
 			ex.printStackTrace();
 			return;
 		}
@@ -447,7 +446,6 @@ public class AirIncomeVoucherGenDlg extends UIDialog implements ActionListener, 
 		closeOK();
 	}
 
-	@Override
 	public void run() {
 		BannerDialog dialog = new BannerDialog(this);
 		dialog.setStartText("∆æ÷§…˙≥…÷–°£°£°£«Î…‘∫Ú£°");
@@ -457,8 +455,8 @@ public class AirIncomeVoucherGenDlg extends UIDialog implements ActionListener, 
 			genrateTheVoucher();
 		}catch (Exception e) {
 			MessageDialog.showHintDlg(null, "¥ÌŒÛ", e.getMessage());
-		} finally {
-			dialog.end();
-		}
+		} 
+		
+		dialog.end();
 	}
 }

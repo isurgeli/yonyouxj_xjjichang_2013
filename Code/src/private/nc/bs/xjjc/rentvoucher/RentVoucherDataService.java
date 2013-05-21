@@ -3,6 +3,7 @@ package nc.bs.xjjc.rentvoucher;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -35,14 +36,15 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 	private Hashtable<String, VoucherVO> voucherMap = new Hashtable<String, VoucherVO>();
 	private Hashtable<String, RentAccsubjValue> subjMap = new Hashtable<String, RentAccsubjValue>();
 	private Hashtable<String, SubjAssValue> subjAssMap = new Hashtable<String, SubjAssValue>();
+	private Hashtable<String, String> errors = new Hashtable<String, String>();
 	
-	@Override
 	public boolean genRentVOucher(String sAccMonth, String eAccMonth,
 			String biztype, String pk_voucherType, String explain, String pk_user)
 			throws BusinessException {
 		
 		rentData.clear();
 		voucherMap.clear();
+		errors.clear();
 		
 		UFDate startDate = new UFDate(sAccMonth+"-01");
 		UFDate endDate = new UFDate(eAccMonth+"-01");
@@ -60,6 +62,16 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 			
 			// 对应应收与预收科目余额查询
 			initSubjBalance(contracts, startDate.toString());
+			
+			if (errors.size()>0){
+				StringBuffer errmsg = new StringBuffer();
+				Enumeration<String> e = errors.keys();
+
+			    while(e.hasMoreElements())
+			    	errmsg.append(e.nextElement()+"\n");
+			    
+				throw new BusinessException(errmsg.toString());
+			}
 			
 			// 应收，收入，预收，现金变动金额汇总
 			for(RentItemDataValue contract : contracts){
@@ -105,6 +117,8 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 			for(VoucherVO voucher : vouchers){
 				voucherBo.save(voucher, true);
 			}
+		}catch (BusinessException be){
+			throw be;
 		}catch(Exception e){
 			e.printStackTrace();
 			throw new BusinessException(e.getMessage());
@@ -350,67 +364,77 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 	private void initSubjandAss(RentItemDataValue[] contracts) throws BusinessException {
 		BaseDAO dao = new BaseDAO();
 		for(RentItemDataValue contract : contracts){
-			if (!subjMap.containsKey(contract.prjCode)){
-				@SuppressWarnings("unchecked")
-				SubjMapVO[] subjMapVOs = (SubjMapVO[])dao.retrieveByClause(SubjMapVO.class, "pk_subjbiz='"+VoucherBizType.RENTREVED.getValue()
-						+"' and pk_corp='1022"
-						+"' and vothercode='"+contract.prjCode+"'").toArray(new SubjMapVO[0]);
-				if (subjMapVOs.length<1)
-					throw new BusinessException("租赁费用项目：["+contract.prjCode+"]没有配置科目对照。");
+			try{
+				if (!subjMap.containsKey(contract.prjCode)){
+					@SuppressWarnings("unchecked")
+					SubjMapVO[] subjMapVOs = (SubjMapVO[])dao.retrieveByClause(SubjMapVO.class, "pk_subjbiz='"+VoucherBizType.RENTREVED.getValue()
+							+"' and pk_corp='1022"
+							+"' and vothercode='"+contract.prjCode+"'").toArray(new SubjMapVO[0]);
+					if (subjMapVOs.length<1)
+						throw new BusinessException("租赁费用项目：["+contract.prjCode+"]没有配置科目对照。"); //TODO errors
+					
+					RentAccsubjValue subjvalue = new RentAccsubjValue();
+					subjvalue.pk_cashsubj = subjMapVOs[0].getPk_debitsubj();
+					subjvalue.pk_suspendsubj = subjMapVOs[0].getPk_suspendsubj();
+					subjvalue.pk_advancesubj = subjMapVOs[0].getPk_advancesubj();
+					subjvalue.pk_incomesubj = subjMapVOs[0].getPk_creditsubj();
 				
-				RentAccsubjValue subjvalue = new RentAccsubjValue();
-				subjvalue.pk_cashsubj = subjMapVOs[0].getPk_debitsubj();
-				subjvalue.pk_suspendsubj = subjMapVOs[0].getPk_suspendsubj();
-				subjvalue.pk_advancesubj = subjMapVOs[0].getPk_advancesubj();
-				subjvalue.pk_incomesubj = subjMapVOs[0].getPk_creditsubj();
-			
-				subjMap.put(contract.prjCode, subjvalue);
+					subjMap.put(contract.prjCode, subjvalue);
+				}
+				contract.subjs = subjMap.get(contract.prjCode);
+			}catch(BusinessException be)			{
+				if (!errors.containsKey(be.getMessage()))
+					errors.put(be.getMessage(),"");
 			}
-			contract.subjs = subjMap.get(contract.prjCode);
 		}
-
+	
 		for(RentItemDataValue contract : contracts){
-
+			
 			ISubjassQry assQry = NCLocator.getInstance().lookup(ISubjassQry.class);
 			ArrayList<SubjassVO> subjAssVOs = new ArrayList<SubjassVO>();
 			subjAssVOs.addAll(Arrays.asList(assQry.queryBDInfo(contract.subjs.pk_cashsubj)));
 			subjAssVOs.addAll(Arrays.asList(assQry.queryBDInfo(contract.subjs.pk_incomesubj)));
 			subjAssVOs.addAll(Arrays.asList(assQry.queryBDInfo(contract.subjs.pk_suspendsubj)));
 			subjAssVOs.addAll(Arrays.asList(assQry.queryBDInfo(contract.subjs.pk_advancesubj)));
-			
+				
 			for (SubjassVO subjAssVO : subjAssVOs) {
-				if (contract.ass.containsKey(subjAssVO.getPk_bdinfo())) continue;
-				
-				String otherAssCode;
-				AssVO assVO = new AssVO();
-				assVO.setPk_Checktype(subjAssVO.getPk_bdinfo());
-				if (subjAssVO.getPk_bdinfo().equals(BDInfo.CUSTOMER.getValue()))
-					otherAssCode = contract.payer;
-				else if (subjAssVO.getPk_bdinfo().equals(BDInfo.DEPARTMENT.getValue()))
-					otherAssCode = "URC";
-				else if (subjAssVO.getPk_bdinfo().equals(BDInfo.CONTRACT.getValue())){
-					otherAssCode = null;
-					assVO.setPk_Checkvalue(contract.getContractAss().getPrimaryKey());
-					assVO.setCheckvaluecode(contract.getContractAss().getJobcode());
-					assVO.setCheckvaluename(contract.getContractAss().getJobclName());
-				}
-				else if (subjAssVO.getPk_bdinfo().equals(BDInfo.TERMINAL.getValue())){
-					otherAssCode = null;
-					assVO.setPk_Checkvalue(contract.getAirStationAss().getPrimaryKey());
-					assVO.setCheckvaluecode(contract.getAirStationAss().getJobcode());
-					assVO.setCheckvaluename(contract.getAirStationAss().getJobclName());
-				}
-				else
-					throw new BusinessException("租赁科目出现部门、客商、航站楼、合同以外的辅助项，系统无法处理。");
-				
-				if (otherAssCode !=null){
-					SubjAssValue assValue = getSubjAssValue(subjAssVO.getPk_bdinfo(), "URC", otherAssCode);
+				try{
+					if (contract.ass.containsKey(subjAssVO.getPk_bdinfo())) continue;
 					
-					assVO.setPk_Checkvalue(assValue.pk_freevalue);
-					assVO.setCheckvaluecode(assValue.code);
-					assVO.setCheckvaluename(assValue.name);
+					String otherAssCode;
+					AssVO assVO = new AssVO();
+					assVO.setPk_Checktype(subjAssVO.getPk_bdinfo());
+					if (subjAssVO.getPk_bdinfo().equals(BDInfo.CUSTOMER.getValue()))
+						otherAssCode = contract.payer;
+					else if (subjAssVO.getPk_bdinfo().equals(BDInfo.DEPARTMENT.getValue()))
+						otherAssCode = "URC";
+					else if (subjAssVO.getPk_bdinfo().equals(BDInfo.CONTRACT.getValue())){
+						otherAssCode = null;
+						assVO.setPk_Checkvalue(contract.getContractAss().getPrimaryKey());
+						assVO.setCheckvaluecode(contract.getContractAss().getJobcode());
+						assVO.setCheckvaluename(contract.getContractAss().getJobclName());
+					}
+					else if (subjAssVO.getPk_bdinfo().equals(BDInfo.TERMINAL.getValue())){
+						otherAssCode = null;
+						assVO.setPk_Checkvalue(contract.getAirStationAss().getPrimaryKey());
+						assVO.setCheckvaluecode(contract.getAirStationAss().getJobcode());
+						assVO.setCheckvaluename(contract.getAirStationAss().getJobclName());
+					}
+					else
+						throw new BusinessException("租赁科目出现部门、客商、航站楼、合同以外的辅助项，系统无法处理。");
+					
+					if (otherAssCode !=null){
+						SubjAssValue assValue = getSubjAssValue(subjAssVO.getPk_bdinfo(), "URC", otherAssCode);
+						
+						assVO.setPk_Checkvalue(assValue.pk_freevalue);
+						assVO.setCheckvaluecode(assValue.code);
+						assVO.setCheckvaluename(assValue.name);
+					}
+					contract.ass.put(subjAssVO.getPk_bdinfo(), assVO);
+				}catch(BusinessException be) {
+					if (!errors.containsKey(be.getMessage()))
+						errors.put(be.getMessage(),"");
 				}
-				contract.ass.put(subjAssVO.getPk_bdinfo(), assVO);
 			}
 		}
 	}
@@ -437,7 +461,7 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 				+"' and pk_corp='1022' "+(needAirPortFilter?"and votherbiz='"+airport +"'":"")
 				+" and vothercode='"+otherAssCode+"'").toArray(new AssValueMapVO[0]);
 		if (assValueMapVO.length==0)
-			throw new BusinessException("机场：["+airport+"]下的"+text+"编码：["+otherAssCode+"]没有配置辅助项对照。");
+			throw new BusinessException("机场：["+airport+"]下的"+text+"编码：["+otherAssCode+"]没有配置辅助项对照。"); // TODO errors
 		
 		@SuppressWarnings("unchecked")
 		Vector<Vector<Object>> codename = (Vector<Vector<Object>>)dao.executeQuery(sql.replace("PKVALUE", assValueMapVO[0].getPk_freevalue()), new VectorProcessor());

@@ -23,7 +23,6 @@ import nc.vo.pub.lang.UFDouble;
 
 public class XjjcPersonLoanImpl implements IXjjcPersonLoan {
 
-	@Override
 	public void refreshPersonLoan() throws BusinessException {
 		GlQueryVO glQVO = getGLQueryVO();
 		

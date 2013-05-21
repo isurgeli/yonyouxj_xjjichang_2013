@@ -6,7 +6,6 @@ import nc.vo.pub.BusinessException;
 
 public class PersonLoanTaskEntry implements IBackgroundWorkPlugin{
 
-	@Override
 	public String executeTask(BgWorkingContext bgwc) {
 		XjjcPersonLoanImpl loanImpl = new XjjcPersonLoanImpl();
 		try {

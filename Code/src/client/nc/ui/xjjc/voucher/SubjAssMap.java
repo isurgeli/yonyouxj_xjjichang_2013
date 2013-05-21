@@ -147,9 +147,11 @@ public class SubjAssMap extends ToftPanel implements TreeSelectionListener,
 			if (cur!=null && cur.size()>0){
 				getBillCardPanel().getHeadItem(AssValueMapVO.VOTHERCODE).setValue(((Vector)cur.get(0)).get(0));
 				getBillCardPanel().getHeadItem(AssValueMapVO.VOTHERNAME).setValue(((Vector)cur.get(0)).get(1));
-				getBillCardPanel().getHeadItem(AssValueMapVO.OBJ_ID).setValue(Integer.parseInt(((Vector)cur.get(0)).get(2).toString()));
 				if (((Vector)cur.get(0)).size()>3){
-					getBillCardPanel().getHeadItem(AssValueMapVO.VOTHERBIZ).setValue(((Vector)cur.get(0)).get(3));
+					getBillCardPanel().getHeadItem(AssValueMapVO.OBJ_ID).setValue(Integer.parseInt(((Vector)cur.get(0)).get(3).toString()));
+					getBillCardPanel().getHeadItem(AssValueMapVO.VOTHERBIZ).setValue(((Vector)cur.get(0)).get(2));
+				}else{
+					getBillCardPanel().getHeadItem(AssValueMapVO.OBJ_ID).setValue(Integer.parseInt(((Vector)cur.get(0)).get(2).toString()));
 				}
 			}
 		}
@@ -746,7 +748,7 @@ public class SubjAssMap extends ToftPanel implements TreeSelectionListener,
 					+ m_curPk_usedfreevalue +"' order by "+AssValueMapVO.VOTHERBIZ+","+AssValueMapVO.VOTHERCODE;
 
 		try {
-			resultVOs = getSubjAssMapDataService().queryAllMap(strWhere);
+			resultVOs = getSubjAssMapDataService().queryAllSubjAssMap(strWhere);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -1015,7 +1017,7 @@ public class SubjAssMap extends ToftPanel implements TreeSelectionListener,
 					+ m_curPk_usedfreevalue +"' order by "+AssValueMapVO.VOTHERBIZ+","+AssValueMapVO.VOTHERCODE;
 
 			try {
-				resultVOs = getSubjAssMapDataService().queryAllMap(strWhere);
+				resultVOs = getSubjAssMapDataService().queryAllSubjAssMap(strWhere);
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}

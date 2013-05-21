@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="gb2312"?>
-<module name="SCM_SO_EJB">
+<module name="XJJC_VOUCHERITF_EJB">
   <public>
     <component remote="true" tx="CMT" priority="0" singleton="true" supportAlias="false">
       <interface>nc.itf.xjjc.voucher.ISubjAssMapDataService</interface>

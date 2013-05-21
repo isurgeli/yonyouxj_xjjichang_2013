@@ -16,11 +16,11 @@ insert into XJJC_BD_FREEVALUEMAP (dr, pk_bdinfo,pk_corp,pk_freevalue,pk_freevalu
  and (instr(xj_amdb.view_chargeproject.cname,'车',1,1)<>0 and xj_amdb.view_chargeproject.code <>'ZZZZ')); --插入车型
 
 insert into XJJC_BD_SUBJMAP(bmergesame,currency,dr,obj_id,pk_corp,pk_creditsubj,pk_debitsubj,pk_subjbiz,pk_subjmap,vmemo,votherbiz,vothercode,vothername)
-(select 'Y', xj_amdb.view_chargeproject.currency,0,xj_amdb.view_chargeproject.obj_id,'1022', bd_accsubj.pk_accsubj, '0001A11000000000150F', 'XJJC0000000000000006', 
+(select 'Y', xj_amdb.view_chargeproject.currency,0,xj_amdb.view_chargeproject.obj_id,'1022', bd_accsubj.pk_accsubj, '0001A11000000000150X', 'XJJC0000000000000006', 
  'XJJC'||dbms_random.string('u',16), null, xj_amdb.view_chargeproject.airport_code, xj_amdb.view_chargeproject.code, xj_amdb.view_chargeproject.cname 
  from xj_amdb.view_chargeproject, bd_accsubj, xjjc_code_to_code
  where xj_amdb.view_chargeproject.code=xjjc_code_to_code.othercode and xjjc_code_to_code.nccode=bd_accsubj.subjcode and xjjc_code_to_code.type='AIRINCOMESUBJ' 
- and xj_amdb.view_chargeproject.code <>'ZZZZ' and bd_accsubj.pk_glorgbook='0001A110000000000394') --插入航空收入科目
+ and xj_amdb.view_chargeproject.code <>'ZZZZ' and bd_accsubj.pk_glorgbook='0001A110000000000C66') --插入航空收入科目
  
 
 select distinct iata_code, fname
@@ -55,3 +55,10 @@ select distinct xj_amdb.view_chargeproject.code,
    and xj_amdb.view_chargeproject.code not in
        (select othercode from xjjc_code_to_code)
  order by xj_amdb.view_chargeproject.code;                 --查找未对应航空收入科目，在编码对照中
+
+select * from pub_billtemplet where pk_billtemplet in ('0001AA10000000004S2K','0001AA10000000004Y8Y','0001AA10000000000VN0') --单据模板
+
+select * from pub_query_templet where id='0001AA10000000005FZN'
+
+select * from pub_query_condition where pk_templet='0001AA10000000005FZN' --查询模板
+

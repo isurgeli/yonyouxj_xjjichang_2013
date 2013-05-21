@@ -119,15 +119,12 @@ public class AirIncomeVoucher extends ToftPanel implements BillEditListener {
 		return m_billListPanel;
 	}
 	
-	@Override
 	public void afterEdit(BillEditEvent e) {
 	}
 
-	@Override
 	public void bodyRowChange(BillEditEvent e) {
 	}
 
-	@Override
 	public String getTitle() {
 		return "∫Ωø’ ’»Î∆æ÷§";
 	}

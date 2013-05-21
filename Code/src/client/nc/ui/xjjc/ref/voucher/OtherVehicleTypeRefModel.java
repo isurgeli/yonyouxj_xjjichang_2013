@@ -17,15 +17,14 @@ public class OtherVehicleTypeRefModel extends AbstractRefGridTreeModel {
 		setCodingRule("3");
 		
 		setFieldCode(new String[] { "xj_amdb.view_chargeproject.code",	"xj_amdb.view_chargeproject.cname", 
-				"xj_amdb.view_chargeproject.obj_id"});
-		setFieldName(new String[] { "编码", "名称", "PK" });
-		setHiddenFieldCode(new String[] { "xj_amdb.view_chargeproject.airport_code" });
+				"xj_amdb.view_chargeproject.airport_code", "xj_amdb.view_chargeproject.obj_id"});
+		setFieldName(new String[] { "编码", "名称", "机场", "PK" });
 		setTableName("xj_amdb.view_chargeproject");
 		setPkFieldCode("xj_amdb.view_chargeproject.obj_id");
 		setWherePart("(xj_amdb.view_chargeproject.code >= '3101' And xj_amdb.view_chargeproject.code <= '3121')");
 		setDocJoinField("xj_amdb.view_chargeproject.airport_code");
 		setOrderPart("code");
-		setDefaultFieldCount(2);
+		setDefaultFieldCount(3);
 		
 		setDataSource("xj_amdb");
 		resetFieldName();

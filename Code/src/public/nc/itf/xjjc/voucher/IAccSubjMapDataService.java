@@ -7,7 +7,7 @@ import nc.vo.xjjc.accsubjmap.SubjMapVO;
 public interface IAccSubjMapDataService {
 	BizTypeVO[] queryBizType() throws BusinessException;
 
-	SubjMapVO[] queryAllMap(String strWhere) throws BusinessException;
+	SubjMapVO[] queryAllSubjMap(String strWhere) throws BusinessException;
 
 	void deleteMap(SubjMapVO map_vo) throws BusinessException;
 

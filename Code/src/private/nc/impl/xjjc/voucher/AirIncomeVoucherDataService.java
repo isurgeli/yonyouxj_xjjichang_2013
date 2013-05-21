@@ -2,6 +2,7 @@ package nc.impl.xjjc.voucher;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -40,9 +41,9 @@ public class AirIncomeVoucherDataService implements
 	private Hashtable<VoucherVO, ArrayList<InvoiceValue>> voucherInvoiceMap = new Hashtable<VoucherVO, ArrayList<InvoiceValue>>();
 	private Hashtable<String, AccSubjValue> subjMap = new Hashtable<String, AccSubjValue>();
 	private Hashtable<String, SubjAssValue> subjAssMap = new Hashtable<String, SubjAssValue>();
+	private Hashtable<String, String> errors = new Hashtable<String, String>();
 	
 
-	@Override
 	public AirCorpVO[] getAirCorpNeedGenVoucher(String sAccMonth, String eAccMonth, String airPort) {
 		BaseDAO otherDao = new BaseDAO("xj_amdb");
 		BaseDAO ncDao = new BaseDAO();
@@ -83,7 +84,6 @@ public class AirIncomeVoucherDataService implements
 		return retData.values().toArray(new AirCorpVO[0]);
 	}
 
-	@Override
 	public FakeVoucherVO[] genVoucherForAirCorp(String sAccMonth,
 			String eAccMonth, String airPort, String airPortname, String pk_voucherType,
 			String explain, String[] airlines, boolean useDollar, UFDouble raito, String pk_user) throws BusinessException {
@@ -99,6 +99,7 @@ public class AirIncomeVoucherDataService implements
 		ArrayList<FakeVoucherVO> retVO = new ArrayList<FakeVoucherVO>();
 		voucherMap.clear();
 		voucherInvoiceMap.clear();
+		errors.clear();
 		@SuppressWarnings("unchecked")
 		Vector<Vector<Object>> gened = (Vector<Vector<Object>>)ncDao.executeQuery("select xjjc_gl_fakevoucher.obj_id from xjjc_gl_fakevoucher, gl_voucher "
 				+"where xjjc_gl_fakevoucher.pk_voucher=gl_voucher.pk_voucher and isnull(gl_voucher.dr,0)=0", new VectorProcessor());
@@ -158,10 +159,20 @@ public class AirIncomeVoucherDataService implements
 					}
 				}
 			}
+			if (errors.size()>0){
+				StringBuffer errmsg = new StringBuffer();
+				Enumeration<String> e = errors.keys();
+
+			    while(e.hasMoreElements())
+			    	errmsg.append(e.nextElement()+"\n");
+			    
+				throw new BusinessException(errmsg.toString());
+			}
+			
 			VoucherVO[] vouchers = voucherMap.values().toArray(new VoucherVO[0]);
 			IVoucher voucherBo = NCLocator.getInstance().lookup(IVoucher.class);
 			for(VoucherVO voucher : vouchers){
-				voucherBo.save(voucher, true);
+				voucherBo.save(voucher, true); //TODO 可能需要改回真
 				ArrayList<InvoiceValue> invoiceInfos = voucherInvoiceMap.get(voucher);
 				for(InvoiceValue invo : invoiceInfos){
 					FakeVoucherVO vouinvo = new FakeVoucherVO();
@@ -178,7 +189,10 @@ public class AirIncomeVoucherDataService implements
 			}
 			
 			ncDao.insertVOArray(retVO.toArray(new FakeVoucherVO[0]));
-		} catch (Exception e) {
+		}catch (BusinessException be){
+			throw be;
+		}catch (Exception e) {
+			e.printStackTrace();
 			throw new BusinessException(e); 
 		}
 		
@@ -258,7 +272,7 @@ public class AirIncomeVoucherDataService implements
 					+"' and pk_corp='1022' and votherbiz='"+airport
 					+"' and vothercode='"+chargePrjCode+"'").toArray(new SubjMapVO[0]);
 			if (subjMapVOs.length==0)
-				throw new BusinessException("机场：["+airport+"]下费用项目：["+chargePrjCode+"]没有配置科目对照。");
+				throw new BusinessException("机场：["+airport+"]下费用项目：["+chargePrjCode+"]没有配置科目对照。"); 
 			
 			IAccsubjDataQuery subjQry = NCLocator.getInstance().lookup(IAccsubjDataQuery.class);
 			AccsubjVO debitSubjVO = subjQry.findAccsubjVOByPrimaryKey(subjMapVOs[0].getPk_debitsubj());
@@ -276,50 +290,56 @@ public class AirIncomeVoucherDataService implements
 
 	private void initDetailVOforVoucher(VoucherVO voucher, String airport, String airPortName, String airline, 
 			String airlineName, String invoiceName,	String period, String chargePrjCode, UFDouble amount, 
-			boolean useDollar,	UFDouble raito) throws BusinessException{
-		initSubjMapVo(airport, chargePrjCode);
-		String pk_accsubjdebit = subjMap.get(airport+chargePrjCode).pk_debitsubj;
-		String pk_accsubjcredit = subjMap.get(airport+chargePrjCode).pk_creditsubj;
-		
-		String creditExplain="转："+airlineName+period.substring(0,4)+"年"+period.substring(4,6)+"月"+airPortName+"机场 起降费";
-		String debitExplain=creditExplain;
-		boolean isClearCenter = invoiceName.indexOf("清算")>-1;
-		if (isClearCenter)
-			debitExplain+="（清算中心）";
-		else
-			debitExplain+="（航空公司）";
-		
-		DetailVO debitVO = findDetailbyAccsubjExplain(voucher, pk_accsubjdebit, debitExplain);
-		
-		if (debitVO==null){
-			debitVO = getNewDetailVO(voucher, pk_accsubjdebit, debitExplain, useDollar, raito);
-			debitVO.setDirection("D");
-			initAssforDetail(debitVO, airport, airline, chargePrjCode, isClearCenter);
-			voucher.insertDetail(debitVO, 0);
-			debitVO = findDetailbyAccsubjExplain(voucher, pk_accsubjdebit, debitExplain);
+			boolean useDollar,	UFDouble raito) { 
+		try{
+			initSubjMapVo(airport, chargePrjCode);
+			String pk_accsubjdebit = subjMap.get(airport+chargePrjCode).pk_debitsubj;
+			String pk_accsubjcredit = subjMap.get(airport+chargePrjCode).pk_creditsubj;
+			
+			String creditExplain="转："+airlineName+period.substring(0,4)+"年"+period.substring(4,6)+"月"+airPortName+"机场 起降费";
+			String debitExplain=creditExplain;
+			boolean isClearCenter = invoiceName.indexOf("清算")>-1;
+			if (isClearCenter)
+				debitExplain+="（清算中心）";
+			else
+				debitExplain+="（航空公司）";
+			
+			DetailVO debitVO = findDetailbyAccsubjExplain(voucher, pk_accsubjdebit, debitExplain);
+			
+			if (debitVO==null){
+				debitVO = getNewDetailVO(voucher, pk_accsubjdebit, debitExplain, useDollar, raito);
+				debitVO.setDirection("D");
+				initAssforDetail(debitVO, airport, airline, chargePrjCode, isClearCenter);
+				voucher.insertDetail(debitVO, 0);
+				debitVO = findDetailbyAccsubjExplain(voucher, pk_accsubjdebit, debitExplain);
+			}
+			// 合并分录金额处理，特别是外币
+			if (useDollar)
+				debitVO.setDebitamount(debitVO.getDebitamount().add(amount.div(raito))); // 原币借方金额
+			else
+				debitVO.setDebitamount(debitVO.getDebitamount().add(amount)); // 原币借方金额
+			debitVO.setLocaldebitamount(debitVO.getLocaldebitamount().add(amount)); // 本币借方金额
+			
+			DetailVO creditVO = findDetailbyAccsubjExplain(voucher, pk_accsubjcredit, creditExplain);
+			
+			if (creditVO==null){
+				creditVO = getNewDetailVO(voucher, pk_accsubjcredit, creditExplain, useDollar, raito);
+				creditVO.setDirection("C");
+				initAssforDetail(creditVO, airport, airline, chargePrjCode, isClearCenter);
+				voucher.addDetail(creditVO);
+				creditVO = findDetailbyAccsubjExplain(voucher, pk_accsubjcredit, creditExplain);
+			}
+			// 合并分录金额处理，特别是外币
+			if (useDollar)
+				creditVO.setCreditamount(creditVO.getCreditamount().add(amount.div(raito))); // 原币贷方金额
+			else
+				creditVO.setCreditamount(creditVO.getCreditamount().add(amount)); // 原币贷方金额
+			creditVO.setLocalcreditamount(creditVO.getLocalcreditamount().add(amount)); // 本币贷方金额	
 		}
-		// 合并分录金额处理，特别是外币
-		if (useDollar)
-			debitVO.setDebitamount(debitVO.getDebitamount().add(amount.div(raito))); // 原币借方金额
-		else
-			debitVO.setDebitamount(debitVO.getDebitamount().add(amount)); // 原币借方金额
-		debitVO.setLocaldebitamount(debitVO.getLocaldebitamount().add(amount)); // 本币借方金额
-		
-		DetailVO creditVO = findDetailbyAccsubjExplain(voucher, pk_accsubjcredit, creditExplain);
-		
-		if (creditVO==null){
-			creditVO = getNewDetailVO(voucher, pk_accsubjcredit, creditExplain, useDollar, raito);
-			creditVO.setDirection("C");
-			initAssforDetail(creditVO, airport, airline, chargePrjCode, isClearCenter);
-			voucher.addDetail(creditVO);
-			creditVO = findDetailbyAccsubjExplain(voucher, pk_accsubjcredit, creditExplain);
+		catch(BusinessException be){
+			if (!errors.containsKey(be.getMessage()))
+				errors.put(be.getMessage(),"");
 		}
-		// 合并分录金额处理，特别是外币
-		if (useDollar)
-			creditVO.setCreditamount(creditVO.getCreditamount().add(amount.div(raito))); // 原币贷方金额
-		else
-			creditVO.setCreditamount(creditVO.getCreditamount().add(amount)); // 原币贷方金额
-		creditVO.setLocalcreditamount(creditVO.getLocalcreditamount().add(amount)); // 本币贷方金额	
 	}
 
 	private void initAssforDetail(DetailVO debitVO, String airport,
@@ -344,7 +364,7 @@ public class AirIncomeVoucherDataService implements
 			ass[i] = new AssVO();
 			ass[i].setPk_Checktype(assVOs[i].getPk_bdinfo());
 			if (otherAssCode !=null){
-				SubjAssValue assValue = getSubjAssValue(assVOs[i].getPk_bdinfo(), airport, otherAssCode);
+				SubjAssValue assValue = getSubjAssValue(assVOs[i].getPk_bdinfo(), airport, otherAssCode); 
 				
 				ass[i].setPk_Checkvalue(assValue.pk_freevalue);
 				ass[i].setCheckvaluecode(assValue.code);
@@ -392,7 +412,7 @@ public class AirIncomeVoucherDataService implements
 				+"' and pk_corp='1022' "+(needAirPortFilter?"and votherbiz='"+airport +"'":"")
 				+" and vothercode='"+otherAssCode+"'").toArray(new AssValueMapVO[0]);
 		if (assValueMapVO.length==0)
-			throw new BusinessException("机场：["+airport+"]下的"+text+"编码：["+otherAssCode+"]没有配置辅助项对照。");
+			throw new BusinessException("机场：["+airport+"]下的"+text+"编码：["+otherAssCode+"]没有配置辅助项对照。"); 
 		
 		@SuppressWarnings("unchecked")
 		Vector<Vector<Object>> codename = (Vector<Vector<Object>>)dao.executeQuery(sql.replace("PKVALUE", assValueMapVO[0].getPk_freevalue()), new VectorProcessor());

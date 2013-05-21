@@ -152,8 +152,8 @@ public class RentIncomeVoucherGenDlg extends UIDialog implements ActionListener,
 	private UIRefPane getComboBizType() {
 		if (comboBizType==null){
 			comboBizType = new UIRefPane();
-			comboBizType.setRefModel(new BizTypeRefModel());
-			comboBizType.setPK(VoucherBizType.LIFTLANDFEE.getValue());
+			comboBizType.setRefModel(new BizTypeRefModel(2));
+			comboBizType.setPK(VoucherBizType.RENTREVED.getValue());
 		}
 		return comboBizType;
 	}
@@ -257,10 +257,9 @@ public class RentIncomeVoucherGenDlg extends UIDialog implements ActionListener,
 		return btnOk;
 	}
 	
-	@Override
 	public void actionPerformed(ActionEvent e) {
-		//new Thread(this).start();
-		genrateTheVoucher();
+		new Thread(this).start();
+		//genrateTheVoucher();
 	}
 
 	private void genrateTheVoucher() {
@@ -276,9 +275,9 @@ public class RentIncomeVoucherGenDlg extends UIDialog implements ActionListener,
 		}
 		try {
 			if (service.genRentVOucher(sAccMonth, eAccMonth, "ALL", pk_voucherType, explain, m_userID))
-				MessageDialog.showHintDlg(null, null, "凭证生成结束。");	
+				MessageDialog.showHintDlg(this, "信息", "凭证生成结束。");	
 		} catch (BusinessException ex) {
-			MessageDialog.showWarningDlg(null, null, ex.getMessage());
+			MessageDialog.showWarningDlg(this, "错误", ex.getMessage());
 			ex.printStackTrace();
 			return;
 		}
@@ -286,7 +285,6 @@ public class RentIncomeVoucherGenDlg extends UIDialog implements ActionListener,
 		closeOK();
 	}
 
-	@Override
 	public void run() {
 		BannerDialog dialog = new BannerDialog(this);
 		dialog.setStartText("凭证生成中。。。请稍候！");
@@ -296,8 +294,7 @@ public class RentIncomeVoucherGenDlg extends UIDialog implements ActionListener,
 			genrateTheVoucher();
 		}catch (Exception e) {
 			MessageDialog.showHintDlg(null, "错误", e.getMessage());
-		} finally {
-			dialog.end();
-		}
+		} 
+		dialog.end();
 	}
 }

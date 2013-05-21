@@ -18,7 +18,6 @@ public class SubjAssMapDataService implements ISubjAssMapDataService {
 		return dao;
 	}
 	
-	@Override
 	public UsedFreeValueVO[] queryUesdAssSubjByCorpPk(String pk_corp) throws BusinessException {
 		try {
 			@SuppressWarnings("unchecked")
@@ -30,8 +29,7 @@ public class SubjAssMapDataService implements ISubjAssMapDataService {
 		}
 	}
 
-	@Override
-	public AssValueMapVO[] queryAllMap(String strWhere) throws BusinessException  {
+	public AssValueMapVO[] queryAllSubjAssMap(String strWhere) throws BusinessException  {
 		try {
 			@SuppressWarnings("unchecked")
 			ArrayList<AssValueMapVO> data = (ArrayList<AssValueMapVO>)getDao().
@@ -42,7 +40,6 @@ public class SubjAssMapDataService implements ISubjAssMapDataService {
 		}
 	}
 
-	@Override
 	public void deleteMap(AssValueMapVO map_vo) throws BusinessException  {
 		try {
 			getDao().deleteVO(map_vo);
@@ -50,8 +47,7 @@ public class SubjAssMapDataService implements ISubjAssMapDataService {
 			throw new BusinessException(e);
 		}
 	}
-
-	@Override
+	
 	public void insertMap(AssValueMapVO map_vo) throws BusinessException  {
 		try {
 			checkUniqueCode(map_vo);
@@ -61,7 +57,6 @@ public class SubjAssMapDataService implements ISubjAssMapDataService {
 		}
 	}
 
-	@Override
 	public void updateMap(AssValueMapVO map_vo) throws BusinessException  {
 		try {
 			checkUniqueCode(map_vo);
