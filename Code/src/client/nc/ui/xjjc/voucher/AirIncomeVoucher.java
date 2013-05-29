@@ -112,6 +112,8 @@ public class AirIncomeVoucher extends ToftPanel implements BillEditListener {
 
 				/* load address templete */
 				m_billListPanel.loadTemplet(m_billType, null, m_userID,m_pkCorp);
+				m_billListPanel.getHeadItem("totaldebit").setDecimalDigits(2);
+				m_billListPanel.getHeadItem("totalcredit").setDecimalDigits(2);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -188,7 +190,7 @@ public class AirIncomeVoucher extends ToftPanel implements BillEditListener {
 					return null;
 				}
 			};
-			SFClientUtil.openLinkedMaintainDialog(BillTemplateID.VOUCHERQUERY.getValue(), this, data);
+			SFClientUtil.openLinkedMaintainDialog(BillTemplateID.VOUCHERMAKE.getValue(), this, data);
 		} else {
 			MessageDialog.showWarningDlg(this, null, "请先选中需要查看的凭证。");
 		}

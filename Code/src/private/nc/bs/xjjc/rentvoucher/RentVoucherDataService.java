@@ -39,7 +39,7 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 	private Hashtable<String, String> errors = new Hashtable<String, String>();
 	
 	public boolean genRentVOucher(String sAccMonth, String eAccMonth,
-			String biztype, String pk_voucherType, String explain, String pk_user)
+			String biztype, String pk_voucherType, String explain, String pk_user, UFDate date)
 			throws BusinessException {
 		
 		rentData.clear();
@@ -100,7 +100,7 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 			
 			// 生成相应凭证分录，正为借，负为贷
 			for(RentItemDataValue contract : contracts){
-				VoucherVO voucher = getRentPeriodVoucherVO(contract, pk_voucherType, explain, pk_user);
+				VoucherVO voucher = getRentPeriodVoucherVO(contract, pk_voucherType, explain, pk_user, date);
 				voucher.setTotaldebit(voucher.getTotaldebit().add(contract.cashSubjAmount.doubleValue()>0?contract.cashSubjAmount:new UFDouble(0)));
 				voucher.setTotaldebit(voucher.getTotaldebit().add(contract.suspendSubjAmount.doubleValue()>0?contract.suspendSubjAmount:new UFDouble(0)));
 				voucher.setTotaldebit(voucher.getTotaldebit().add(contract.advanceSubjAmount.doubleValue()>0?contract.advanceSubjAmount:new UFDouble(0)));
@@ -115,6 +115,8 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 			VoucherVO[] vouchers = voucherMap.values().toArray(new VoucherVO[0]);
 			IVoucher voucherBo = NCLocator.getInstance().lookup(IVoucher.class);
 			for(VoucherVO voucher : vouchers){
+				if (voucher.getExplanation() == null)
+					voucher.setExplanation(((DetailVO)voucher.getDetail().get(0)).getExplanation());
 				voucherBo.save(voucher, true);
 			}
 		}catch (BusinessException be){
@@ -218,7 +220,7 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 	}
 
 	private VoucherVO getRentPeriodVoucherVO(RentItemDataValue contract,
-			String pk_voucherType, String explain, String pk_user) throws BusinessException {
+			String pk_voucherType, String explain, String pk_user, UFDate date) throws BusinessException {
 		VoucherVO voucher = null;
 		if (!voucherMap.containsKey(contract.getAirStation())){ // 凭证生成条件
 			voucher = new VoucherVO();
@@ -229,10 +231,10 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 			IGlorgbookAccessor glorg = new GlorgbookCache();
 			GlorgbookVO[] books = glorg.getGLOrgBookVOsByPk_Corp2("1022");
 			//period = period.substring(0, 4)+"-"+period.substring(4, 6)+"-01";
-			voucher.setYear(new UFDate(new Date()).toString().substring(0, 4)); // 会计年度
-			voucher.setPeriod(new UFDate(new Date()).toString().substring(5, 7)); //会计期间
+			voucher.setYear(date.toString().substring(0, 4)); // 会计年度
+			voucher.setPeriod(date.toString().substring(5, 7)); //会计期间
 			voucher.setNo(null); //凭证号处理
-			voucher.setPrepareddate(new UFDate()); //制单日期
+			voucher.setPrepareddate(date); //制单日期
 			voucher.setTallydate(null); //记账日期
 			voucher.setAttachment(0); //附单据数
 			voucher.setPk_prepared(pk_user); //制单人主键
@@ -252,8 +254,7 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 			voucher.setTotalcredit(new UFDouble(0)); //贷方合计
 			if (explain!=null && explain.length()>0)
 				voucher.setExplanation(explain); //凭证摘要
-			else
-				voucher.setExplanation("00010000000000000001");
+
 			voucher.setFree10("VOUCHERNEWADD");
 			voucher.setFree1(voucher.getPeriod());
 			voucher.setContrastflag(null); //对账标志

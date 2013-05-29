@@ -21,6 +21,7 @@ import nc.itf.xjjc.rentvoucher.IRentVoucherDataService;
 import nc.itf.xjjc.voucher.IAirIncomeVoucherDataService;
 import nc.itf.xjjc.voucher.VoucherBizType;
 import nc.jdbc.framework.processor.VectorProcessor;
+import nc.ui.pub.ClientEnvironment;
 import nc.ui.pub.beans.MessageDialog;
 import nc.ui.pub.beans.UIButton;
 import nc.ui.pub.beans.UICheckBox;
@@ -274,7 +275,8 @@ public class RentIncomeVoucherGenDlg extends UIDialog implements ActionListener,
 			eAccMonth = getRefEndPeriod().getRefName();
 		}
 		try {
-			if (service.genRentVOucher(sAccMonth, eAccMonth, "ALL", pk_voucherType, explain, m_userID))
+			if (service.genRentVOucher(sAccMonth, eAccMonth, "ALL", pk_voucherType, explain, m_userID, 
+					ClientEnvironment.getInstance().getBusinessDate()))
 				MessageDialog.showHintDlg(this, "信息", "凭证生成结束。");	
 		} catch (BusinessException ex) {
 			MessageDialog.showWarningDlg(this, "错误", ex.getMessage());

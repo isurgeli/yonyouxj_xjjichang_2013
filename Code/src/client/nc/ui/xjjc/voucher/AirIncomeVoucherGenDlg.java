@@ -20,6 +20,7 @@ import nc.itf.uap.IUAPQueryBS;
 import nc.itf.xjjc.voucher.IAirIncomeVoucherDataService;
 import nc.itf.xjjc.voucher.VoucherBizType;
 import nc.jdbc.framework.processor.VectorProcessor;
+import nc.ui.pub.ClientEnvironment;
 import nc.ui.pub.beans.MessageDialog;
 import nc.ui.pub.beans.UIButton;
 import nc.ui.pub.beans.UICheckBox;
@@ -436,7 +437,8 @@ public class AirIncomeVoucherGenDlg extends UIDialog implements ActionListener, 
 		
 		try {
 			retData = service.genVoucherForAirCorp(sAccMonth, eAccMonth, airPort, airPortname, 
-					pk_voucherType, explain, selectAirCorp.toArray(new String[0]), useDollar, raito, m_userID);
+					pk_voucherType, explain, selectAirCorp.toArray(new String[0]), useDollar, raito, m_userID,
+					ClientEnvironment.getInstance().getBusinessDate());
 		} catch (BusinessException ex) {
 			MessageDialog.showWarningDlg(this, "´íÎó", ex.getMessage());
 			ex.printStackTrace();

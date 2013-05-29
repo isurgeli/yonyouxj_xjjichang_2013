@@ -86,7 +86,7 @@ public class AirIncomeVoucherDataService implements
 
 	public FakeVoucherVO[] genVoucherForAirCorp(String sAccMonth,
 			String eAccMonth, String airPort, String airPortname, String pk_voucherType,
-			String explain, String[] airlines, boolean useDollar, UFDouble raito, String pk_user) throws BusinessException {
+			String explain, String[] airlines, boolean useDollar, UFDouble raito, String pk_user, UFDate date) throws BusinessException {
 		//先加动态锁
 		String[] pks = new String[airlines.length];
 		for(int i=0;i<airlines.length;i++)
@@ -143,7 +143,7 @@ public class AirIncomeVoucherDataService implements
 					invoiceInfo.setVinvoname(invoiceName);
 					invoiceInfo.setVinvoperiod(period);
 					
-					VoucherVO voucher = getAirlinePeriodVoucherVO(airline, period, pk_voucherType, explain, invoiceInfo, invoiceAmount, pk_user);
+					VoucherVO voucher = getAirlinePeriodVoucherVO(airline, period, pk_voucherType, explain, invoiceInfo, invoiceAmount, pk_user, date);
 					
 					@SuppressWarnings("unchecked")
 					Vector<Vector<Object>> items = (Vector<Vector<Object>>)otherDao.executeQuery("select xj_amdb.view_chargeproject.code, xj_amdb.view_invoice_item.amount "
@@ -172,7 +172,9 @@ public class AirIncomeVoucherDataService implements
 			VoucherVO[] vouchers = voucherMap.values().toArray(new VoucherVO[0]);
 			IVoucher voucherBo = NCLocator.getInstance().lookup(IVoucher.class);
 			for(VoucherVO voucher : vouchers){
-				voucherBo.save(voucher, true); //TODO 可能需要改回真
+				if (voucher.getExplanation() == null)
+					voucher.setExplanation(((DetailVO)voucher.getDetail().get(0)).getExplanation());
+				voucherBo.save(voucher, true);
 				ArrayList<InvoiceValue> invoiceInfos = voucherInvoiceMap.get(voucher);
 				for(InvoiceValue invo : invoiceInfos){
 					FakeVoucherVO vouinvo = new FakeVoucherVO();
@@ -200,7 +202,7 @@ public class AirIncomeVoucherDataService implements
 	}
 
 	private VoucherVO getAirlinePeriodVoucherVO(String airline, String period, String pk_voucherType, 
-			String explain, InvoiceValue invoiceInfo, UFDouble amount, String pk_user) {
+			String explain, InvoiceValue invoiceInfo, UFDouble amount, String pk_user, UFDate date) {
 		
 		VoucherVO voucher = null;
 		if (!voucherMap.containsKey(airline+period)){
@@ -212,10 +214,10 @@ public class AirIncomeVoucherDataService implements
 			IGlorgbookAccessor glorg = new GlorgbookCache();
 			GlorgbookVO[] books = glorg.getGLOrgBookVOsByPk_Corp2("1022");
 			//period = period.substring(0, 4)+"-"+period.substring(4, 6)+"-01";
-			voucher.setYear(new UFDate(new Date()).toString().substring(0, 4)); // 会计年度
-			voucher.setPeriod(new UFDate(new Date()).toString().substring(5, 7)); //会计期间
+			voucher.setYear(date.toString().substring(0, 4)); // 会计年度
+			voucher.setPeriod(date.toString().substring(5, 7)); //会计期间
 			voucher.setNo(null); //凭证号处理
-			voucher.setPrepareddate(new UFDate()); //制单日期
+			voucher.setPrepareddate(date); //制单日期
 			voucher.setTallydate(null); //记账日期
 			voucher.setAttachment(0); //附单据数
 			voucher.setPk_prepared(pk_user); //制单人主键
@@ -235,8 +237,6 @@ public class AirIncomeVoucherDataService implements
 			voucher.setTotalcredit(amount); //贷方合计
 			if (explain!=null && explain.length()>0)
 				voucher.setExplanation(explain); //凭证摘要
-			else
-				voucher.setExplanation("00010000000000000001");
 			voucher.setFree10("VOUCHERNEWADD");
 			voucher.setFree1(voucher.getPeriod());
 			voucher.setContrastflag(null); //对账标志
