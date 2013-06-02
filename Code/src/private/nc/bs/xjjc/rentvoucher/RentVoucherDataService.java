@@ -2,6 +2,8 @@ package nc.bs.xjjc.rentvoucher;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -53,7 +55,7 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 			throw new BusinessException("指定生成期间不是一个整月。");
 		
 		try{
-			// TODO 租赁收入数据查询-查询条件与账期
+			//  租赁收入数据查询-查询条件与账期
 			initIncomeandPay(startDate.toString(), endDate.toString(), biztype);
 			
 			// 确定科目与辅助项
@@ -117,6 +119,7 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 			for(VoucherVO voucher : vouchers){
 				if (voucher.getExplanation() == null)
 					voucher.setExplanation(((DetailVO)voucher.getDetail().get(0)).getExplanation());
+				Collections.sort(voucher.getDetail(), new RentDetailComparator());
 				voucherBo.save(voucher, true);
 			}
 		}catch (BusinessException be){
@@ -135,21 +138,25 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 			DetailVO debitVO = getNewDetailVO(voucher, contract.subjs.pk_cashsubj, contract.cashSubjAmount, "收："+explain);
 			debitVO.setCheckstyle("0001A110000000000AIU"); // TODO 结算方式主键
 			debitVO.setCheckno("100001"); // TODO 结算号
+			debitVO.setAccsubjcode(contract.subjs.getCashsubjcode());
 			initAssforDetail(debitVO, contract);
 			voucher.addDetail(debitVO);
 		}
 		if (contract.incomeSubjAmount.doubleValue()!=0){
 			DetailVO debitVO = getNewDetailVO(voucher, contract.subjs.pk_incomesubj, contract.incomeSubjAmount, "转："+explain);
+			debitVO.setAccsubjcode(contract.subjs.getIncomesubjcode());
 			initAssforDetail(debitVO, contract);
 			voucher.addDetail(debitVO);
 		}
 		if (contract.suspendSubjAmount.doubleValue()!=0){
 			DetailVO debitVO = getNewDetailVO(voucher, contract.subjs.pk_suspendsubj, contract.suspendSubjAmount, "转："+explain);
+			debitVO.setAccsubjcode(contract.subjs.getSuspendsubjcode());
 			initAssforDetail(debitVO, contract);
 			voucher.addDetail(debitVO);
 		}
 		if (contract.advanceSubjAmount.doubleValue()!=0){
 			DetailVO debitVO = getNewDetailVO(voucher, contract.subjs.pk_advancesubj, contract.advanceSubjAmount, "转："+explain);
+			debitVO.setAccsubjcode(contract.subjs.getAdvancesubjcode());
 			initAssforDetail(debitVO, contract);
 			voucher.addDetail(debitVO);
 		}
@@ -273,7 +280,7 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 	}
 
 	private void initIncomeandPay(String sAccMonth, String eAccMonth, String biztype)	throws BusinessException{
-		// TODO 租赁收入数据查询-查询条件与账期
+		//  租赁收入数据查询-查询条件与账期
 		BaseDAO otherDao = new BaseDAO("xj_amdb");
 		// 处理客户名，航站楼
 		@SuppressWarnings("unchecked")
@@ -372,7 +379,7 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 							+"' and pk_corp='1022"
 							+"' and vothercode='"+contract.prjCode+"'").toArray(new SubjMapVO[0]);
 					if (subjMapVOs.length<1)
-						throw new BusinessException("租赁费用项目：["+contract.prjCode+"]没有配置科目对照。"); //TODO errors
+						throw new BusinessException("租赁费用项目：["+contract.prjCode+"]没有配置科目对照。"); 
 					
 					RentAccsubjValue subjvalue = new RentAccsubjValue();
 					subjvalue.pk_cashsubj = subjMapVOs[0].getPk_debitsubj();
@@ -462,7 +469,7 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 				+"' and pk_corp='1022' "+(needAirPortFilter?"and votherbiz='"+airport +"'":"")
 				+" and vothercode='"+otherAssCode+"'").toArray(new AssValueMapVO[0]);
 		if (assValueMapVO.length==0)
-			throw new BusinessException("机场：["+airport+"]下的"+text+"编码：["+otherAssCode+"]没有配置辅助项对照。"); // TODO errors
+			throw new BusinessException("机场：["+airport+"]下的"+text+"编码：["+otherAssCode+"]没有配置辅助项对照。"); 
 		
 		@SuppressWarnings("unchecked")
 		Vector<Vector<Object>> codename = (Vector<Vector<Object>>)dao.executeQuery(sql.replace("PKVALUE", assValueMapVO[0].getPk_freevalue()), new VectorProcessor());

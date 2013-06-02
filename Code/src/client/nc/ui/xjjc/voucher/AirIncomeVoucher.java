@@ -1,7 +1,10 @@
 package nc.ui.xjjc.voucher;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 
+import javax.swing.JApplet;
 import javax.swing.JTable;
 
 import nc.bs.framework.common.NCLocator;
@@ -10,6 +13,7 @@ import nc.itf.xjjc.voucher.BillTemplateID;
 import nc.itf.xjjc.voucher.IAirIncomeVoucherDataService;
 import nc.jdbc.framework.processor.BeanListProcessor;
 import nc.ui.pub.ButtonObject;
+import nc.ui.pub.ClientEnvironment;
 import nc.ui.pub.ToftPanel;
 import nc.ui.pub.beans.MessageDialog;
 import nc.ui.pub.beans.UIDialog;
@@ -17,6 +21,7 @@ import nc.ui.pub.bill.BillEditEvent;
 import nc.ui.pub.bill.BillEditListener;
 import nc.ui.pub.bill.BillListPanel;
 import nc.ui.pub.linkoperate.ILinkMaintainData;
+import nc.ui.sm.login.AppletContainer;
 import nc.ui.trade.query.HYQueryConditionDLG;
 import nc.ui.trade.query.INormalQuery;
 import nc.ui.uap.sf.SFClientUtil;
@@ -37,6 +42,8 @@ public class AirIncomeVoucher extends ToftPanel implements BillEditListener {
 
 	/* 操作控件 */
 	private ButtonObject m_Query;
+	
+	private ButtonObject m_Help;
 
 	private ButtonObject m_GenVoucher;
 	
@@ -83,8 +90,10 @@ public class AirIncomeVoucher extends ToftPanel implements BillEditListener {
 			m_ShowVoucher.setEnabled(true);
 			m_RentVoucher = new ButtonObject("转租赁凭证" ,"转租赁凭证", 2, "转租赁凭证");
 			m_RentVoucher.setEnabled(true);
+			m_Help = new ButtonObject("帮助" ,"帮助", 2, "帮助");
+			m_Help.setEnabled(true);
 
-			m_Ary = new ButtonObject[] { m_Query, m_GenVoucher, m_ShowVoucher, m_RentVoucher};
+			m_Ary = new ButtonObject[] { m_Query, m_GenVoucher, m_ShowVoucher, m_RentVoucher, m_Help};
 			setButtons(m_Ary);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -149,6 +158,15 @@ public class AirIncomeVoucher extends ToftPanel implements BillEditListener {
 			showHintMessage("开始生成租赁业务凭证。");
 			doGenRentVoucher();
 			showHintMessage("结束生成租赁业务凭证。");
+		} else if (bo == m_Help){
+			try {
+				URL url = new URL(ClientEnvironment.getInstance().getServerURL().toString()+"xjjc/help.html");
+				JApplet applet = (JApplet)getParent().getParent().getParent().getParent().getParent().getParent().getParent().getParent().getParent().getParent().getParent();
+				applet.getAppletContext().showDocument(url, "_blank"); 
+			} catch (MalformedURLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 

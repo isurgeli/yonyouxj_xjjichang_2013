@@ -16,9 +16,8 @@ public class OtherCustomerRefModel extends AbstractRefGridTreeModel {
 		setClassTableName("xj_amdb.view_airportunit ");
 		setCodingRule("3");
 		
-		setFieldCode(new String[] { "xj_amdb.view_payer.iata_code",	"xj_amdb.view_payer.fname", "xj_amdb.view_payer.obj_id"});
-		setFieldName(new String[] { "编码", "名称", "PK" });
-		setHiddenFieldCode(new String[] { "xj_amdb.view_payer.airport_code" });
+		setFieldCode(new String[] { "xj_amdb.view_payer.iata_code",	"xj_amdb.view_payer.fname", "xj_amdb.view_payer.airport_code", "xj_amdb.view_payer.obj_id"});
+		setFieldName(new String[] { "编码", "名称", "机场", "PK" });
 		setTableName("xj_amdb.view_payer");
 		setPkFieldCode("xj_amdb.view_payer.obj_id");
 		setWherePart("xj_amdb.view_payer.airlines='0'");

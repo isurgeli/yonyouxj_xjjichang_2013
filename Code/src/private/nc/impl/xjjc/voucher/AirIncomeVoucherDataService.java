@@ -1,6 +1,8 @@
 package nc.impl.xjjc.voucher;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -149,6 +151,7 @@ public class AirIncomeVoucherDataService implements
 					Vector<Vector<Object>> items = (Vector<Vector<Object>>)otherDao.executeQuery("select xj_amdb.view_chargeproject.code, xj_amdb.view_invoice_item.amount "
 							+"from xj_amdb.view_invoice_item, xj_amdb.view_chargeproject "
 							+"where xj_amdb.view_invoice_item.charge_project_id=xj_amdb.view_chargeproject.obj_id "
+							+"and xj_amdb.view_invoice_item.amount > 0 "
 							+"and xj_amdb.view_invoice_item.invoice_id="+obj_id, new VectorProcessor());
 					
 					for(int itemIdx=0;itemIdx<items.size();itemIdx++){ 
@@ -174,6 +177,7 @@ public class AirIncomeVoucherDataService implements
 			for(VoucherVO voucher : vouchers){
 				if (voucher.getExplanation() == null)
 					voucher.setExplanation(((DetailVO)voucher.getDetail().get(0)).getExplanation());
+				Collections.sort(voucher.getDetail(), new AirDetailComparator());
 				voucherBo.save(voucher, true);
 				ArrayList<InvoiceValue> invoiceInfos = voucherInvoiceMap.get(voucher);
 				for(InvoiceValue invo : invoiceInfos){
@@ -296,6 +300,9 @@ public class AirIncomeVoucherDataService implements
 			String pk_accsubjdebit = subjMap.get(airport+chargePrjCode).pk_debitsubj;
 			String pk_accsubjcredit = subjMap.get(airport+chargePrjCode).pk_creditsubj;
 			
+			String accsubjdebitCode = subjMap.get(airport+chargePrjCode).debitSubjCode;
+			String accsubjcreditCode = subjMap.get(airport+chargePrjCode).creditSubjCode;
+			
 			String creditExplain="转："+airlineName+period.substring(0,4)+"年"+period.substring(4,6)+"月"+airPortName+"机场 起降费";
 			String debitExplain=creditExplain;
 			boolean isClearCenter = invoiceName.indexOf("清算")>-1;
@@ -309,6 +316,7 @@ public class AirIncomeVoucherDataService implements
 			if (debitVO==null){
 				debitVO = getNewDetailVO(voucher, pk_accsubjdebit, debitExplain, useDollar, raito);
 				debitVO.setDirection("D");
+				debitVO.setAccsubjcode(accsubjdebitCode);
 				initAssforDetail(debitVO, airport, airline, chargePrjCode, isClearCenter);
 				voucher.insertDetail(debitVO, 0);
 				debitVO = findDetailbyAccsubjExplain(voucher, pk_accsubjdebit, debitExplain);
@@ -325,6 +333,7 @@ public class AirIncomeVoucherDataService implements
 			if (creditVO==null){
 				creditVO = getNewDetailVO(voucher, pk_accsubjcredit, creditExplain, useDollar, raito);
 				creditVO.setDirection("C");
+				creditVO.setAccsubjcode(accsubjcreditCode);
 				initAssforDetail(creditVO, airport, airline, chargePrjCode, isClearCenter);
 				voucher.addDetail(creditVO);
 				creditVO = findDetailbyAccsubjExplain(voucher, pk_accsubjcredit, creditExplain);

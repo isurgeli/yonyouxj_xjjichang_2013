@@ -68,10 +68,16 @@ public class SubjAssMapDataService implements ISubjAssMapDataService {
 	
 	private void checkUniqueCode(AssValueMapVO map_vo) throws BusinessException  {
 		try {
-			Vector count = (Vector)getDao().executeQuery("select count(1) from XJJC_BD_FREEVALUEMAP where vothercode='"+map_vo.getVothercode()
-					+"' and pk_freevaluemap<>'"+map_vo.getPrimaryKey()+"' and pk_corp='"+map_vo.getPk_corp()+"'", new VectorProcessor());
-			if (!((Vector)count.get(0)).get(0).equals(0))
-				throw new BusinessException("外系统编码：["+map_vo.getVothercode()+"]，已被使用。");
+			StringBuffer sql = new StringBuffer();
+			sql.append("select count(1) from XJJC_BD_FREEVALUEMAP where vothercode='"+map_vo.getVothercode()+"' ");
+			sql.append(map_vo.getPk_freevaluemap()!=null?" and pk_freevaluemap<>'"+map_vo.getPk_freevaluemap()+"' ":"");
+			sql.append(" and pk_corp='"+map_vo.getPk_corp()+"' ");
+			sql.append(" and votherbiz"+(map_vo.getVotherbiz()!=null?"='"+map_vo.getVotherbiz()+"'":" is null"));
+			@SuppressWarnings("unchecked")
+			Vector<Vector<Object>> count = (Vector<Vector<Object>>)getDao().executeQuery(sql.toString(), new VectorProcessor());
+			if (!count.get(0).get(0).equals(0))
+				throw new BusinessException((map_vo.getVotherbiz()!=null?"机场：["+map_vo.getVotherbiz()+"]下，":"")
+						+"外系统编码：["+map_vo.getVothercode()+"]，已被使用。");
 		} catch (DAOException e) {
 			throw new BusinessException(e);
 		}
