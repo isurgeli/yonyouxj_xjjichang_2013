@@ -44,6 +44,7 @@ import nc.ui.xjjc.ref.voucher.OtherAircorpRefModel;
 import nc.ui.xjjc.ref.voucher.OtherCustomerRefModel;
 import nc.ui.xjjc.ref.voucher.OtherDeptRefModel;
 import nc.ui.xjjc.ref.voucher.OtherVehicleTypeRefModel;
+import nc.vo.logging.Debug;
 import nc.vo.ml.NCLangRes4VoTransl;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.CircularlyAccessibleValueObject;
@@ -206,7 +207,7 @@ public class SubjAssMap extends ToftPanel implements TreeSelectionListener,
 						.getName());
 				getBillListPanel().getHeadTable().addMouseListener(this);
 			} catch (Exception e) {
-				e.printStackTrace();
+				Debug.error(e.getMessage(),e);
 			}
 		}
 		return m_mainDataPanel;
@@ -234,7 +235,7 @@ public class SubjAssMap extends ToftPanel implements TreeSelectionListener,
 				m_treePane.setPreferredSize(new Dimension(210, 300));
 				m_treePane.setMinimumSize(new Dimension(150, 300));
 			} catch (Exception e) {
-				e.printStackTrace();
+				Debug.error(e.getMessage(),e);
 			}
 		}
 		return m_treePane;
@@ -256,7 +257,7 @@ public class SubjAssMap extends ToftPanel implements TreeSelectionListener,
 				m_splitPaneH.add(createSplitPane(), JSplitPane.BOTTOM);
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			Debug.error(e.getMessage(),e);
 		}
 		return m_splitPaneH;
 	}
@@ -292,7 +293,7 @@ public class SubjAssMap extends ToftPanel implements TreeSelectionListener,
 				m_splitPane.add(createMainDataPanel(), "right");
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			Debug.error(e.getMessage(),e);
 		}
 		return m_splitPane;
 	}
@@ -382,7 +383,7 @@ public class SubjAssMap extends ToftPanel implements TreeSelectionListener,
 			try {
 				getSubjAssMapDataService().deleteMap(map_vo);
 			} catch (Exception e) {
-				e.printStackTrace();
+				Debug.error(e.getMessage(),e);
 				showErrorMessage(e.getMessage());
 				//					return;
 			}
@@ -569,7 +570,7 @@ public class SubjAssMap extends ToftPanel implements TreeSelectionListener,
 				mg.setAimClass(UsedFreeValueVO.class);
 				mg.setLevel(new int[]{2});
 			} catch (Exception e) {
-				e.printStackTrace();
+				Debug.error(e.getMessage(),e);
 			}
 
 			/* set area tree config */
@@ -597,7 +598,7 @@ public class SubjAssMap extends ToftPanel implements TreeSelectionListener,
 				
 				m_billCardPanel.addBillEditListenerHeadTail(this);
 			} catch (Exception e) {
-				e.printStackTrace();
+				Debug.error(e.getMessage(),e);
 			}
 			
 		}
@@ -619,7 +620,7 @@ public class SubjAssMap extends ToftPanel implements TreeSelectionListener,
 				/* load address templete */
 				m_billListPanel.loadTemplet(m_billType, m_busiType, m_userID,m_pkCorp);
 			} catch (Exception e) {
-				e.printStackTrace();
+				Debug.error(e.getMessage(),e);
 			}
 		}
 		return m_billListPanel;
@@ -776,7 +777,7 @@ public class SubjAssMap extends ToftPanel implements TreeSelectionListener,
 			m_Ary = new ButtonObject[] { m_Add, m_Edit, m_Del, m_Save,m_Refresh,m_Cancel };
 			setButtons(m_Ary);
 		} catch (Exception e) {
-			e.printStackTrace();
+			Debug.error(e.getMessage(),e);
 		}
 	}
 
@@ -800,7 +801,7 @@ public class SubjAssMap extends ToftPanel implements TreeSelectionListener,
 		try {
 			resultVOs = getSubjAssMapDataService().queryAllSubjAssMap(strWhere);
 		} catch (Exception e) {
-			e.printStackTrace();
+			Debug.error(e.getMessage(),e);
 		}
 
 		tempBillListPanel
@@ -915,7 +916,7 @@ public class SubjAssMap extends ToftPanel implements TreeSelectionListener,
 						.getInstance().getCorporation().getPk_corp());
 			 getTreeModel().createTree(uAssVOs);
 		} catch (Exception e) {
-			e.printStackTrace();
+			Debug.error(e.getMessage(),e);
 		}
 		 m_treePane.gettree().setSelectionModel(model);
 		if(usedFreeValuePk != null && usedFreeValuePk.length() > 0){
@@ -1001,7 +1002,7 @@ public class SubjAssMap extends ToftPanel implements TreeSelectionListener,
 			getBillCardPanel().getHeadItem(AssValueMapVO.PK_FREEVALUE).setLoadFormula(formulas);
 			getBillListPanel().getHeadItem(AssValueMapVO.PK_FREEVALUE).setLoadFormula(formulas);
 		} catch (BusinessException e) {
-			e.printStackTrace();
+			Debug.error(e.getMessage(),e);
 		}
 		
 		//freevaluecode->getcolvalue(tablename,fieldname,pk_field,pk_value ) 

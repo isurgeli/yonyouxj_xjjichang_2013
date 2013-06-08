@@ -26,6 +26,7 @@ import nc.ui.trade.query.HYQueryConditionDLG;
 import nc.ui.trade.query.INormalQuery;
 import nc.ui.uap.sf.SFClientUtil;
 import nc.ui.xjjc.rentvoucher.RentIncomeVoucherGenDlg;
+import nc.vo.logging.Debug;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.CircularlyAccessibleValueObject;
 import nc.vo.pub.lang.UFDouble;
@@ -96,7 +97,7 @@ public class AirIncomeVoucher extends ToftPanel implements BillEditListener {
 			m_Ary = new ButtonObject[] { m_Query, m_GenVoucher, m_ShowVoucher, m_RentVoucher, m_Help};
 			setButtons(m_Ary);
 		} catch (Exception e) {
-			e.printStackTrace();
+			Debug.error(e.getMessage(),e);
 		}
 	}
 	
@@ -124,7 +125,7 @@ public class AirIncomeVoucher extends ToftPanel implements BillEditListener {
 				m_billListPanel.getHeadItem("totaldebit").setDecimalDigits(2);
 				m_billListPanel.getHeadItem("totalcredit").setDecimalDigits(2);
 			} catch (Exception e) {
-				e.printStackTrace();
+				Debug.error(e.getMessage(),e);
 			}
 		}
 		return m_billListPanel;
@@ -164,8 +165,7 @@ public class AirIncomeVoucher extends ToftPanel implements BillEditListener {
 				JApplet applet = (JApplet)getParent().getParent().getParent().getParent().getParent().getParent().getParent().getParent().getParent().getParent().getParent();
 				applet.getAppletContext().showDocument(url, "_blank"); 
 			} catch (MalformedURLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				Debug.error(e.getMessage(),e);
 			}
 		}
 	}
@@ -256,7 +256,7 @@ public class AirIncomeVoucher extends ToftPanel implements BillEditListener {
 			getBillListPanel().setHeaderValueVO((CircularlyAccessibleValueObject[]) resultVOs.toArray(new CircularlyAccessibleValueObject[0]));
 			getBillListPanel().getHeadBillModel().execLoadFormula();
 		} catch (BusinessException e) {
-			e.printStackTrace();
+			Debug.error(e.getMessage(),e);
 		}	
 	}
 }

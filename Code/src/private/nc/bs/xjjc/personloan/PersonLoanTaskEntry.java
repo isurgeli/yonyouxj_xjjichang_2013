@@ -2,6 +2,7 @@ package nc.bs.xjjc.personloan;
 
 import nc.bs.pub.taskcenter.BgWorkingContext;
 import nc.bs.pub.taskcenter.IBackgroundWorkPlugin;
+import nc.vo.logging.Debug;
 import nc.vo.pub.BusinessException;
 
 public class PersonLoanTaskEntry implements IBackgroundWorkPlugin{
@@ -11,7 +12,7 @@ public class PersonLoanTaskEntry implements IBackgroundWorkPlugin{
 		try {
 			loanImpl.refreshPersonLoan();
 		} catch (BusinessException e) {
-			e.printStackTrace();
+			Debug.error(e.getMessage(),e);
 			return e.getMessage();
 		}
 		

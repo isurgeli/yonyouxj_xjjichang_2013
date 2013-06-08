@@ -3,8 +3,6 @@ package nc.bs.xjjc.rentvoucher;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -14,6 +12,7 @@ import nc.bd.glorgbook.IGlorgbookAccessor;
 import nc.bs.dao.BaseDAO;
 import nc.bs.dao.DAOException;
 import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
 import nc.impl.xjjc.voucher.SubjAssValue;
 import nc.itf.gl.voucher.IVoucher;
 import nc.itf.uap.bd.accsubj.ISubjassQry;
@@ -119,14 +118,16 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 			for(VoucherVO voucher : vouchers){
 				if (voucher.getExplanation() == null)
 					voucher.setExplanation(((DetailVO)voucher.getDetail().get(0)).getExplanation());
-				Collections.sort(voucher.getDetail(), new RentDetailComparator());
-				voucherBo.save(voucher, true);
+				if (voucher.getDetail()!=null && voucher.getDetail().size()>0){
+					Collections.sort(voucher.getDetail(), new RentDetailComparator());
+					voucherBo.save(voucher, true);
+				}
 			}
 		}catch (BusinessException be){
 			throw be;
 		}catch(Exception e){
-			e.printStackTrace();
-			throw new BusinessException(e.getMessage());
+			Logger.error(e.getMessage(), e);
+			throw new BusinessException(e);
 		}
 		return true;
 	}
@@ -473,6 +474,8 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 		
 		@SuppressWarnings("unchecked")
 		Vector<Vector<Object>> codename = (Vector<Vector<Object>>)dao.executeQuery(sql.replace("PKVALUE", assValueMapVO[0].getPk_freevalue()), new VectorProcessor());
+		if (codename == null || codename.size()==0)
+			throw new BusinessException("机场：["+airport+"]下的"+text+"编码：["+otherAssCode+"]对应辅助项不存在。");
 		SubjAssValue assValue = new SubjAssValue();
 		assValue.pk_freevalue = assValueMapVO[0].getPk_freevalue();
 		assValue.code = codename.get(0).get(0).toString();

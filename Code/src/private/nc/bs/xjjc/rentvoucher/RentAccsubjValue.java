@@ -5,6 +5,7 @@ import java.util.Vector;
 import nc.bs.dao.BaseDAO;
 import nc.bs.dao.DAOException;
 import nc.jdbc.framework.processor.VectorProcessor;
+import nc.vo.logging.Debug;
 import nc.vo.pub.BusinessException;
 
 public class RentAccsubjValue {
@@ -58,7 +59,7 @@ public class RentAccsubjValue {
 					advancesubjcode = item.get(1).toString();
 			}
 		} catch (DAOException e) {
-			e.printStackTrace();
+			Debug.error(e.getMessage(),e);
 			throw new BusinessException(e.getMessage());
 		}
 	}

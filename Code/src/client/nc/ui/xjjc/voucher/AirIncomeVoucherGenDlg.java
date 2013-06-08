@@ -36,6 +36,7 @@ import nc.ui.pub.tools.BannerDialog;
 import nc.ui.xjjc.ref.voucher.BizTypeRefModel;
 import nc.ui.xjjc.ref.voucher.CheckListManager;
 import nc.ui.xjjc.ref.voucher.OtherDeptRefModel;
+import nc.vo.logging.Debug;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.lang.UFDate;
 import nc.vo.pub.lang.UFDouble;
@@ -277,7 +278,7 @@ public class AirIncomeVoucherGenDlg extends UIDialog implements ActionListener, 
 						"' and enddate>'"+today.toString()+"'", new VectorProcessor());
 				if (data.size()>0) refStartPeriod.setPK(data.get(0).get(0).toString());
 			} catch (BusinessException e) {
-				e.printStackTrace();
+				Debug.error(e.getMessage(),e);
 			}
 		}
 		return refStartPeriod;
@@ -409,6 +410,10 @@ public class AirIncomeVoucherGenDlg extends UIDialog implements ActionListener, 
 		if (getUseDollar().isSelected()){
 			try{
 				raito = new UFDouble(getDollarRatio().getText());
+				if (raito.doubleValue()==0){
+					MessageDialog.showWarningDlg(null, null, "请填写正确的汇率。");
+					return;
+				}
 			}
 			catch (Exception ex){
 				MessageDialog.showWarningDlg(null, null, "请填写正确的汇率。");
@@ -441,7 +446,7 @@ public class AirIncomeVoucherGenDlg extends UIDialog implements ActionListener, 
 					ClientEnvironment.getInstance().getBusinessDate());
 		} catch (BusinessException ex) {
 			MessageDialog.showWarningDlg(this, "错误", ex.getMessage());
-			ex.printStackTrace();
+			Debug.error(ex.getMessage(),ex);
 			return;
 		}
 		

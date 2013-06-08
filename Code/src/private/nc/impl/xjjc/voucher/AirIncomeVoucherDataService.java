@@ -1,9 +1,8 @@
 package nc.impl.xjjc.voucher;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -13,6 +12,7 @@ import nc.bd.glorgbook.IGlorgbookAccessor;
 import nc.bs.dao.BaseDAO;
 import nc.bs.dao.DAOException;
 import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
 import nc.bs.uap.lock.PKLock;
 import nc.itf.gl.voucher.IVoucher;
 import nc.itf.uap.bd.accsubj.IAccsubjDataQuery;
@@ -55,7 +55,7 @@ public class AirIncomeVoucherDataService implements
 			Vector<Vector<Object>> invoices = (Vector<Vector<Object>>)otherDao.executeQuery("select xj_amdb.view_payer.iata_code,xj_amdb.view_payer.fname,xj_amdb.view_payer.country_type, xj_amdb.view_invoice.obj_id "
 					+"from xj_amdb.view_invoice, xj_amdb.view_payer where xj_amdb.view_invoice.payer_code = xj_amdb.view_payer.iata_code "
 					+"and xj_amdb.view_invoice.airport_code = xj_amdb.view_payer.airport_code "
-					+"and xj_amdb.view_invoice.amount > 0 "
+					+"and xj_amdb.view_invoice.amount <> 0 "
 					+"and xj_amdb.view_invoice.account_month >= '"+sAccMonth.replace("-", "")
 					+"' and xj_amdb.view_invoice.account_month <= '"+eAccMonth.replace("-", "")
 					+"' and xj_amdb.view_invoice.airport_code = '"+airPort+"'", new VectorProcessor());
@@ -80,7 +80,7 @@ public class AirIncomeVoucherDataService implements
 				}
 			}
 		} catch (DAOException e) {
-			e.printStackTrace();
+			Logger.error(e.getMessage(), e);
 		}
 		
 		return retData.values().toArray(new AirCorpVO[0]);
@@ -117,7 +117,7 @@ public class AirIncomeVoucherDataService implements
 						+"from xj_amdb.view_invoice, xj_amdb.view_payer "
 						+"where xj_amdb.view_invoice.payer_code=xj_amdb.view_payer.iata_code "
 						+"and xj_amdb.view_invoice.airport_code = xj_amdb.view_payer.airport_code "
-						+"and xj_amdb.view_invoice.amount > 0 "
+						+"and xj_amdb.view_invoice.amount <> 0 "
 						+" and xj_amdb.view_invoice.account_month >= '"+sAccMonth.replace("-", "")
 						+"' and xj_amdb.view_invoice.account_month <= '"+eAccMonth.replace("-", "")
 						+"' and xj_amdb.view_invoice.airport_code = '"+airPort
@@ -151,7 +151,7 @@ public class AirIncomeVoucherDataService implements
 					Vector<Vector<Object>> items = (Vector<Vector<Object>>)otherDao.executeQuery("select xj_amdb.view_chargeproject.code, xj_amdb.view_invoice_item.amount "
 							+"from xj_amdb.view_invoice_item, xj_amdb.view_chargeproject "
 							+"where xj_amdb.view_invoice_item.charge_project_id=xj_amdb.view_chargeproject.obj_id "
-							+"and xj_amdb.view_invoice_item.amount > 0 "
+							+"and xj_amdb.view_invoice_item.amount <> 0 "
 							+"and xj_amdb.view_invoice_item.invoice_id="+obj_id, new VectorProcessor());
 					
 					for(int itemIdx=0;itemIdx<items.size();itemIdx++){ 
@@ -177,20 +177,25 @@ public class AirIncomeVoucherDataService implements
 			for(VoucherVO voucher : vouchers){
 				if (voucher.getExplanation() == null)
 					voucher.setExplanation(((DetailVO)voucher.getDetail().get(0)).getExplanation());
-				Collections.sort(voucher.getDetail(), new AirDetailComparator());
-				voucherBo.save(voucher, true);
-				ArrayList<InvoiceValue> invoiceInfos = voucherInvoiceMap.get(voucher);
-				for(InvoiceValue invo : invoiceInfos){
-					FakeVoucherVO vouinvo = new FakeVoucherVO();
-					vouinvo.setPk_voucher(voucher.getPk_voucher());
-					vouinvo.setVinvoname(invo.getVinvoname());
-					vouinvo.setObj_id(invo.getObj_id());
-					vouinvo.setNinvoamount(invo.getNinvoamount());
-					vouinvo.setVinvoperiod(invo.getVinvoperiod());
-					vouinvo.setVinvoaircorp(invo.getVinvoaircorp());
-					vouinvo.setVinvoairport(invo.getVinvoairport());
-					vouinvo.setPk_corp("1022");
-					retVO.add(vouinvo);
+				if (voucher.getDetail()!=null && voucher.getDetail().size()>0){
+					for(int idx=0;idx<voucher.getDetail().size();idx++)
+						voucher.getDetail(idx).setFreevalue30(null);
+					Collections.sort(voucher.getDetail(), new AirDetailComparator());
+					voucherBo.save(voucher, true);
+					
+					ArrayList<InvoiceValue> invoiceInfos = voucherInvoiceMap.get(voucher);
+					for(InvoiceValue invo : invoiceInfos){
+						FakeVoucherVO vouinvo = new FakeVoucherVO();
+						vouinvo.setPk_voucher(voucher.getPk_voucher());
+						vouinvo.setVinvoname(invo.getVinvoname());
+						vouinvo.setObj_id(invo.getObj_id());
+						vouinvo.setNinvoamount(invo.getNinvoamount());
+						vouinvo.setVinvoperiod(invo.getVinvoperiod());
+						vouinvo.setVinvoaircorp(invo.getVinvoaircorp());
+						vouinvo.setVinvoairport(invo.getVinvoairport());
+						vouinvo.setPk_corp("1022");
+						retVO.add(vouinvo);
+					}
 				}
 			}
 			
@@ -198,7 +203,7 @@ public class AirIncomeVoucherDataService implements
 		}catch (BusinessException be){
 			throw be;
 		}catch (Exception e) {
-			e.printStackTrace();
+			Logger.error(e.getMessage(), e);
 			throw new BusinessException(e); 
 		}
 		
@@ -311,39 +316,44 @@ public class AirIncomeVoucherDataService implements
 			else
 				debitExplain+="（航空公司）";
 			
-			DetailVO debitVO = findDetailbyAccsubjExplain(voucher, pk_accsubjdebit, debitExplain);
-			
-			if (debitVO==null){
-				debitVO = getNewDetailVO(voucher, pk_accsubjdebit, debitExplain, useDollar, raito);
-				debitVO.setDirection("D");
-				debitVO.setAccsubjcode(accsubjdebitCode);
-				initAssforDetail(debitVO, airport, airline, chargePrjCode, isClearCenter);
-				voucher.insertDetail(debitVO, 0);
-				debitVO = findDetailbyAccsubjExplain(voucher, pk_accsubjdebit, debitExplain);
+			{
+				AssVO[] debitAss = initAssforDetail(pk_accsubjdebit, airport, airline, chargePrjCode, isClearCenter);
+				DetailVO debitVO = findDetailbyAccsubjExplain(voucher, pk_accsubjdebit, debitExplain, debitAss);
+				
+				if (debitVO==null){
+					debitVO = getNewDetailVO(voucher, pk_accsubjdebit, debitExplain, debitAss, useDollar, raito);
+					debitVO.setDirection("D");
+					debitVO.setAccsubjcode(accsubjdebitCode);
+					debitVO.setAss(debitAss);
+					voucher.insertDetail(debitVO, 0);
+					debitVO = findDetailbyAccsubjExplain(voucher, pk_accsubjdebit, debitExplain, debitAss);
+				}
+				// 合并分录金额处理，特别是外币
+				if (useDollar)
+					debitVO.setDebitamount(debitVO.getDebitamount().add(amount.div(raito))); // 原币借方金额
+				else
+					debitVO.setDebitamount(debitVO.getDebitamount().add(amount)); // 原币借方金额
+				debitVO.setLocaldebitamount(debitVO.getLocaldebitamount().add(amount)); // 本币借方金额
 			}
-			// 合并分录金额处理，特别是外币
-			if (useDollar)
-				debitVO.setDebitamount(debitVO.getDebitamount().add(amount.div(raito))); // 原币借方金额
-			else
-				debitVO.setDebitamount(debitVO.getDebitamount().add(amount)); // 原币借方金额
-			debitVO.setLocaldebitamount(debitVO.getLocaldebitamount().add(amount)); // 本币借方金额
-			
-			DetailVO creditVO = findDetailbyAccsubjExplain(voucher, pk_accsubjcredit, creditExplain);
-			
-			if (creditVO==null){
-				creditVO = getNewDetailVO(voucher, pk_accsubjcredit, creditExplain, useDollar, raito);
-				creditVO.setDirection("C");
-				creditVO.setAccsubjcode(accsubjcreditCode);
-				initAssforDetail(creditVO, airport, airline, chargePrjCode, isClearCenter);
-				voucher.addDetail(creditVO);
-				creditVO = findDetailbyAccsubjExplain(voucher, pk_accsubjcredit, creditExplain);
+			{
+				AssVO[] creditAss = initAssforDetail(pk_accsubjcredit, airport, airline, chargePrjCode, isClearCenter);
+				DetailVO creditVO = findDetailbyAccsubjExplain(voucher, pk_accsubjcredit, creditExplain, creditAss);
+				
+				if (creditVO==null){
+					creditVO = getNewDetailVO(voucher, pk_accsubjcredit, creditExplain, creditAss, useDollar, raito);
+					creditVO.setDirection("C");
+					creditVO.setAccsubjcode(accsubjcreditCode);
+					creditVO.setAss(creditAss);
+					voucher.addDetail(creditVO);
+					creditVO = findDetailbyAccsubjExplain(voucher, pk_accsubjcredit, creditExplain, creditAss);
+				}
+				// 合并分录金额处理，特别是外币
+				if (useDollar)
+					creditVO.setCreditamount(creditVO.getCreditamount().add(amount.div(raito))); // 原币贷方金额
+				else
+					creditVO.setCreditamount(creditVO.getCreditamount().add(amount)); // 原币贷方金额
+				creditVO.setLocalcreditamount(creditVO.getLocalcreditamount().add(amount)); // 本币贷方金额	
 			}
-			// 合并分录金额处理，特别是外币
-			if (useDollar)
-				creditVO.setCreditamount(creditVO.getCreditamount().add(amount.div(raito))); // 原币贷方金额
-			else
-				creditVO.setCreditamount(creditVO.getCreditamount().add(amount)); // 原币贷方金额
-			creditVO.setLocalcreditamount(creditVO.getLocalcreditamount().add(amount)); // 本币贷方金额	
 		}
 		catch(BusinessException be){
 			if (!errors.containsKey(be.getMessage()))
@@ -351,10 +361,22 @@ public class AirIncomeVoucherDataService implements
 		}
 	}
 
-	private void initAssforDetail(DetailVO debitVO, String airport,
+	private String getAssFullID(AssVO[] ass) {
+		StringBuffer sb = new StringBuffer();
+		for(AssVO assItem : ass){
+			sb.append(assItem.getPk_Checktype());
+			sb.append(assItem.getCheckvaluecode());
+		}
+		
+		return sb.toString();
+	}
+
+	private AssVO[] initAssforDetail(String pk_accsubj, String airport,
 			String airline, String chargePrjCode, boolean isClearCenter) throws BusinessException {
 		ISubjassQry assQry = NCLocator.getInstance().lookup(ISubjassQry.class);
-		SubjassVO[] assVOs = assQry.queryBDInfo(debitVO.getPk_accsubj());
+		SubjassVO[] assVOs = assQry.queryBDInfo(pk_accsubj);
+		
+		Arrays.sort(assVOs, new SubjassComparator());
 		
 		AssVO[] ass = new AssVO[assVOs.length];
 		for (int i = 0; i < assVOs.length; i++) {
@@ -390,7 +412,8 @@ public class AirIncomeVoucherDataService implements
 				}
 			}
 		}
-		debitVO.setAss(ass);
+
+		return ass;
 	}
 
 	private SubjAssValue getSubjAssValue(String pk_bdinfo, String airport, String otherAssCode) throws BusinessException {
@@ -425,6 +448,8 @@ public class AirIncomeVoucherDataService implements
 		
 		@SuppressWarnings("unchecked")
 		Vector<Vector<Object>> codename = (Vector<Vector<Object>>)dao.executeQuery(sql.replace("PKVALUE", assValueMapVO[0].getPk_freevalue()), new VectorProcessor());
+		if (codename == null || codename.size()==0)
+			throw new BusinessException("机场：["+airport+"]下的"+text+"编码：["+otherAssCode+"]对应辅助项不存在。");
 		SubjAssValue assValue = new SubjAssValue();
 		assValue.pk_freevalue = assValueMapVO[0].getPk_freevalue();
 		assValue.code = codename.get(0).get(0).toString();
@@ -435,12 +460,14 @@ public class AirIncomeVoucherDataService implements
 		return assValue;
 	}
 
-	private DetailVO findDetailbyAccsubjExplain(VoucherVO voucher, String pk_accsubj, String explain) {
+	private DetailVO findDetailbyAccsubjExplain(VoucherVO voucher, String pk_accsubj, String explain, AssVO[] ass) {
 		boolean haveDebit = false;
+		String assId = getAssFullID(ass);
 		int i=0;
 		for (i=0;i<voucher.getNumDetails();i++){
 			if (voucher.getDetail(i).getPk_accsubj().equals(pk_accsubj) 
-					&& voucher.getDetail(i).getExplanation().equals(explain)){
+					&& voucher.getDetail(i).getExplanation().equals(explain)
+					&& voucher.getDetail(i).getFreevalue30().equals(assId)){
 				haveDebit = true;
 				break;
 			}
@@ -451,7 +478,7 @@ public class AirIncomeVoucherDataService implements
 			return voucher.getDetail(i);
 	}
 	
-	private DetailVO getNewDetailVO(VoucherVO voucher, String pk_accsubj, String explian, boolean useDollar, UFDouble raito){
+	private DetailVO getNewDetailVO(VoucherVO voucher, String pk_accsubj, String explian, AssVO[] ass, boolean useDollar, UFDouble raito){
 		DetailVO detail = new DetailVO();
 		detail.setPk_detail(null); // 分录主键
 		detail.setIsdifflag(new UFBoolean(false));
@@ -495,7 +522,10 @@ public class AirIncomeVoucherDataService implements
 
 		detail.setPk_glorg(voucher.getPk_glorg());// 会计主体
 		detail.setPk_glbook(voucher.getPk_glbook());// 会计账簿
-
+		
+		String assId = getAssFullID(ass);
+		detail.setFreevalue30(assId);
+		
 		return detail;
 	}
 }

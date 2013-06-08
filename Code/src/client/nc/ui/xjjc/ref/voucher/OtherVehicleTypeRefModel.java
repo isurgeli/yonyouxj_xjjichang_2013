@@ -21,7 +21,8 @@ public class OtherVehicleTypeRefModel extends AbstractRefGridTreeModel {
 		setFieldName(new String[] { "±àÂë", "Ãû³Æ", "»ú³¡", "PK" });
 		setTableName("xj_amdb.view_chargeproject");
 		setPkFieldCode("xj_amdb.view_chargeproject.obj_id");
-		setWherePart("(xj_amdb.view_chargeproject.code >= '3000' And xj_amdb.view_chargeproject.code < '5000')");
+		setWherePart("((xj_amdb.view_chargeproject.code >= '3000' And xj_amdb.view_chargeproject.code < '5000') "
+				+"or (xj_amdb.view_chargeproject.code >= '9000' And xj_amdb.view_chargeproject.code < '9999'))");
 		setDocJoinField("xj_amdb.view_chargeproject.airport_code");
 		setOrderPart("code");
 		setDefaultFieldCount(3);

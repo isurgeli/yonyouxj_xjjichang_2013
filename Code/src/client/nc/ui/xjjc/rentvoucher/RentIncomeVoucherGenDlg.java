@@ -37,6 +37,7 @@ import nc.ui.pub.tools.BannerDialog;
 import nc.ui.xjjc.ref.voucher.BizTypeRefModel;
 import nc.ui.xjjc.ref.voucher.CheckListManager;
 import nc.ui.xjjc.ref.voucher.OtherDeptRefModel;
+import nc.vo.logging.Debug;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.lang.UFDate;
 import nc.vo.pub.lang.UFDouble;
@@ -178,7 +179,7 @@ public class RentIncomeVoucherGenDlg extends UIDialog implements ActionListener,
 						"' and enddate>'"+today.toString()+"'", new VectorProcessor());
 				if (data.size()>0) refStartPeriod.setPK(data.get(0).get(0).toString());
 			} catch (BusinessException e) {
-				e.printStackTrace();
+				Debug.error(e.getMessage(),e);
 			}
 		}
 		return refStartPeriod;
@@ -280,7 +281,7 @@ public class RentIncomeVoucherGenDlg extends UIDialog implements ActionListener,
 				MessageDialog.showHintDlg(this, "信息", "凭证生成结束。");	
 		} catch (BusinessException ex) {
 			MessageDialog.showWarningDlg(this, "错误", ex.getMessage());
-			ex.printStackTrace();
+			Debug.error(ex.getMessage(),ex);
 			return;
 		}
 		

@@ -41,6 +41,7 @@ import nc.ui.pub.bill.BillListPanel;
 import nc.ui.xjjc.ref.voucher.OtherChargePrjRefModel;
 import nc.ui.xjjc.ref.voucher.OtherDeptRefModel;
 import nc.ui.xjjc.ref.voucher.OtherRentPrjRefModel;
+import nc.vo.logging.Debug;
 import nc.vo.ml.NCLangRes4VoTransl;
 import nc.vo.pub.CircularlyAccessibleValueObject;
 import nc.vo.util.tree.MethodGroup;
@@ -210,7 +211,7 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 						.getName());
 				getBillListPanel().getHeadTable().addMouseListener(this);
 			} catch (Exception e) {
-				e.printStackTrace();
+				Debug.error(e.getMessage(),e);
 			}
 		}
 		return m_mainDataPanel;
@@ -240,7 +241,7 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 				m_treePane.setMinimumSize(new Dimension(150, 300));
 				expandTree(m_treePane.gettree());
 			} catch (Exception e) {
-				e.printStackTrace();
+				Debug.error(e.getMessage(),e);
 			}
 		}
 		return m_treePane;
@@ -266,7 +267,7 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 				m_splitPane.add(createMainDataPanel(), "right");
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			Debug.error(e.getMessage(),e);
 		}
 		return m_splitPane;
 	}
@@ -281,7 +282,7 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 				m_splitPaneH.add(createSplitPane(), JSplitPane.BOTTOM);
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			Debug.error(e.getMessage(),e);
 		}
 		return m_splitPaneH;
 	}
@@ -386,7 +387,7 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 			try {
 				getAccSubjMapDataService().deleteMap(map_vo);
 			} catch (Exception e) {
-				e.printStackTrace();
+				Debug.error(e.getMessage(),e);
 				showErrorMessage(e.getMessage());
 				//					return;
 			}
@@ -573,7 +574,7 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 				mg.setAimClass(BizTypeVO.class);
 				mg.setLevel(new int[]{2,2});
 			} catch (Exception e) {
-				e.printStackTrace();
+				Debug.error(e.getMessage(),e);
 			}
 
 			/* set area tree config */
@@ -601,7 +602,7 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 				
 				m_billCardPanel.addBillEditListenerHeadTail(this);
 			} catch (Exception e) {
-				e.printStackTrace();
+				Debug.error(e.getMessage(),e);
 			}
 			
 		}
@@ -623,7 +624,7 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 				/* load address templete */
 				m_billListPanel.loadTemplet(m_billType, m_busiType, m_userID,m_pkCorp);
 			} catch (Exception e) {
-				e.printStackTrace();
+				Debug.error(e.getMessage(),e);
 			}
 		}
 		return m_billListPanel;
@@ -779,7 +780,7 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 			m_Ary = new ButtonObject[] { m_Add, m_Edit, m_Del, m_Save,m_Refresh,m_Cancel };
 			setButtons(m_Ary);
 		} catch (Exception e) {
-			e.printStackTrace();
+			Debug.error(e.getMessage(),e);
 		}
 	}
 
@@ -884,7 +885,7 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 			 BizTypeVO[] bizTypeVOs = getAccSubjMapDataService().queryBizType();
 			 getTreeModel().createTree(bizTypeVOs);
 		} catch (Exception e) {
-			e.printStackTrace();
+			Debug.error(e.getMessage(),e);
 		}
 		 m_treePane.gettree().setSelectionModel(model);
 		if(subjBizPk != null && subjBizPk.length() > 0){
@@ -1065,7 +1066,7 @@ public class AccSubjMap extends ToftPanel implements TreeSelectionListener,
 		try {
 			resultVOs = getAccSubjMapDataService().queryAllSubjMap(strWhere);
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			Debug.error(ex.getMessage(),ex);
 		}
 
 		tempBillListPanel
