@@ -102,6 +102,8 @@ public class AirIncomeVoucherDataService implements
 		voucherMap.clear();
 		voucherInvoiceMap.clear();
 		errors.clear();
+		subjMap.clear();
+		subjAssMap.clear();
 		@SuppressWarnings("unchecked")
 		Vector<Vector<Object>> gened = (Vector<Vector<Object>>)ncDao.executeQuery("select xjjc_gl_fakevoucher.obj_id from xjjc_gl_fakevoucher, gl_voucher "
 				+"where xjjc_gl_fakevoucher.pk_voucher=gl_voucher.pk_voucher and isnull(gl_voucher.dr,0)=0", new VectorProcessor());
@@ -178,8 +180,10 @@ public class AirIncomeVoucherDataService implements
 				if (voucher.getExplanation() == null)
 					voucher.setExplanation(((DetailVO)voucher.getDetail().get(0)).getExplanation());
 				if (voucher.getDetail()!=null && voucher.getDetail().size()>0){
-					for(int idx=0;idx<voucher.getDetail().size();idx++)
+					for(int idx=0;idx<voucher.getDetail().size();idx++){
 						voucher.getDetail(idx).setFreevalue30(null);
+						voucher.getDetail(idx).setFreevalue29(null);
+					}
 					Collections.sort(voucher.getDetail(), new AirDetailComparator());
 					voucherBo.save(voucher, true);
 					
@@ -235,7 +239,7 @@ public class AirIncomeVoucherDataService implements
 			voucher.setPk_manager("N/A"); //记账人主键
 			voucher.setSignflag(new UFBoolean(false)); //签字标志
 			voucher.setModifyflag("YYY"); //凭证修改标志
-			voucher.setDetailmodflag(new UFBoolean(false)); //分录增删标志
+			voucher.setDetailmodflag(new UFBoolean(true)); //分录增删标志
 			voucher.setDiscardflag(new UFBoolean(false)); //作废标志
 			voucher.setPk_system("GL"); //制单系统主键
 			voucher.setAddclass(null); //增加接口类
@@ -318,47 +322,61 @@ public class AirIncomeVoucherDataService implements
 			
 			{
 				AssVO[] debitAss = initAssforDetail(pk_accsubjdebit, airport, airline, chargePrjCode, isClearCenter);
-				DetailVO debitVO = findDetailbyAccsubjExplain(voucher, pk_accsubjdebit, debitExplain, debitAss);
+				DetailVO debitVO = findDebitDetailbyAccsubjExplain(voucher, pk_accsubjdebit, debitExplain, debitAss, invoiceName);
 				
 				if (debitVO==null){
-					debitVO = getNewDetailVO(voucher, pk_accsubjdebit, debitExplain, debitAss, useDollar, raito);
+					debitVO = getNewDetailVO(voucher, pk_accsubjdebit, debitExplain, debitAss, useDollar, raito, invoiceName);
 					debitVO.setDirection("D");
 					debitVO.setAccsubjcode(accsubjdebitCode);
 					debitVO.setAss(debitAss);
+					detailAddDebitAmount(amount, useDollar, raito, debitVO);
 					voucher.insertDetail(debitVO, 0);
-					debitVO = findDetailbyAccsubjExplain(voucher, pk_accsubjdebit, debitExplain, debitAss);
+				//	debitVO = findDetailbyAccsubjExplain(voucher, pk_accsubjdebit, debitExplain, debitAss, amount); //因为插入的是clone后的VO
+				}else{
+					detailAddDebitAmount(amount, useDollar, raito, debitVO);
 				}
-				// 合并分录金额处理，特别是外币
-				if (useDollar)
-					debitVO.setDebitamount(debitVO.getDebitamount().add(amount.div(raito))); // 原币借方金额
-				else
-					debitVO.setDebitamount(debitVO.getDebitamount().add(amount)); // 原币借方金额
-				debitVO.setLocaldebitamount(debitVO.getLocaldebitamount().add(amount)); // 本币借方金额
 			}
 			{
 				AssVO[] creditAss = initAssforDetail(pk_accsubjcredit, airport, airline, chargePrjCode, isClearCenter);
-				DetailVO creditVO = findDetailbyAccsubjExplain(voucher, pk_accsubjcredit, creditExplain, creditAss);
+				DetailVO creditVO = findCreditDetailbyAccsubjExplain(voucher, pk_accsubjcredit, creditExplain, creditAss, amount);
 				
 				if (creditVO==null){
-					creditVO = getNewDetailVO(voucher, pk_accsubjcredit, creditExplain, creditAss, useDollar, raito);
+					creditVO = getNewDetailVO(voucher, pk_accsubjcredit, creditExplain, creditAss, useDollar, raito, "");
 					creditVO.setDirection("C");
 					creditVO.setAccsubjcode(accsubjcreditCode);
 					creditVO.setAss(creditAss);
+					detailAddCreditAmount(amount, useDollar, raito, creditVO);
 					voucher.addDetail(creditVO);
-					creditVO = findDetailbyAccsubjExplain(voucher, pk_accsubjcredit, creditExplain, creditAss);
+				//	creditVO = findDetailbyAccsubjExplain(voucher, pk_accsubjcredit, creditExplain, creditAss, amount);
+				}else{
+					detailAddCreditAmount(amount, useDollar, raito, creditVO);
 				}
-				// 合并分录金额处理，特别是外币
-				if (useDollar)
-					creditVO.setCreditamount(creditVO.getCreditamount().add(amount.div(raito))); // 原币贷方金额
-				else
-					creditVO.setCreditamount(creditVO.getCreditamount().add(amount)); // 原币贷方金额
-				creditVO.setLocalcreditamount(creditVO.getLocalcreditamount().add(amount)); // 本币贷方金额	
 			}
 		}
 		catch(BusinessException be){
 			if (!errors.containsKey(be.getMessage()))
 				errors.put(be.getMessage(),"");
 		}
+	}
+
+	private void detailAddCreditAmount(UFDouble amount, boolean useDollar,
+			UFDouble raito, DetailVO creditVO) {
+		// 合并分录金额处理，特别是外币
+		if (useDollar)
+			creditVO.setCreditamount(creditVO.getCreditamount().add(amount.div(raito))); // 原币贷方金额
+		else
+			creditVO.setCreditamount(creditVO.getCreditamount().add(amount)); // 原币贷方金额
+		creditVO.setLocalcreditamount(creditVO.getLocalcreditamount().add(amount)); // 本币贷方金额	
+	}
+
+	private void detailAddDebitAmount(UFDouble amount, boolean useDollar,
+			UFDouble raito, DetailVO debitVO) {
+		// 合并分录金额处理，特别是外币
+		if (useDollar)
+			debitVO.setDebitamount(debitVO.getDebitamount().add(amount.div(raito))); // 原币借方金额
+		else
+			debitVO.setDebitamount(debitVO.getDebitamount().add(amount)); // 原币借方金额
+		debitVO.setLocaldebitamount(debitVO.getLocaldebitamount().add(amount)); // 本币借方金额
 	}
 
 	private String getAssFullID(AssVO[] ass) {
@@ -460,14 +478,16 @@ public class AirIncomeVoucherDataService implements
 		return assValue;
 	}
 
-	private DetailVO findDetailbyAccsubjExplain(VoucherVO voucher, String pk_accsubj, String explain, AssVO[] ass) {
+	private DetailVO findCreditDetailbyAccsubjExplain(VoucherVO voucher, String pk_accsubj, String explain, AssVO[] ass, UFDouble amount) {
 		boolean haveDebit = false;
 		String assId = getAssFullID(ass);
 		int i=0;
 		for (i=0;i<voucher.getNumDetails();i++){
 			if (voucher.getDetail(i).getPk_accsubj().equals(pk_accsubj) 
 					&& voucher.getDetail(i).getExplanation().equals(explain)
-					&& voucher.getDetail(i).getFreevalue30().equals(assId)){
+					&& voucher.getDetail(i).getFreevalue30().equals(assId)
+					&& (voucher.getDetail(i).getDirection()?voucher.getDetail(i).getDebitamount():voucher.getDetail(i).getCreditamount())
+					.multiply(amount).doubleValue()>0){
 				haveDebit = true;
 				break;
 			}
@@ -478,7 +498,26 @@ public class AirIncomeVoucherDataService implements
 			return voucher.getDetail(i);
 	}
 	
-	private DetailVO getNewDetailVO(VoucherVO voucher, String pk_accsubj, String explian, AssVO[] ass, boolean useDollar, UFDouble raito){
+	private DetailVO findDebitDetailbyAccsubjExplain(VoucherVO voucher, String pk_accsubj, String explain, AssVO[] ass, String invoiceName) {
+		boolean haveDebit = false;
+		String assId = getAssFullID(ass);
+		int i=0;
+		for (i=0;i<voucher.getNumDetails();i++){
+			if (voucher.getDetail(i).getPk_accsubj().equals(pk_accsubj) 
+					&& voucher.getDetail(i).getExplanation().equals(explain)
+					&& voucher.getDetail(i).getFreevalue30().equals(assId)
+					&& voucher.getDetail(i).getFreevalue29().equals(invoiceName)){
+				haveDebit = true;
+				break;
+			}
+		}
+		if (!haveDebit)
+			return null;
+		else
+			return voucher.getDetail(i);
+	}
+	
+	private DetailVO getNewDetailVO(VoucherVO voucher, String pk_accsubj, String explian, AssVO[] ass, boolean useDollar, UFDouble raito, String invoiceName){
 		DetailVO detail = new DetailVO();
 		detail.setPk_detail(null); // 分录主键
 		detail.setIsdifflag(new UFBoolean(false));
@@ -525,7 +564,7 @@ public class AirIncomeVoucherDataService implements
 		
 		String assId = getAssFullID(ass);
 		detail.setFreevalue30(assId);
-		
+		detail.setFreevalue29(invoiceName);
 		return detail;
 	}
 }

@@ -41,8 +41,10 @@ import nc.ui.pub.bill.BillEditEvent;
 import nc.ui.pub.bill.BillEditListener;
 import nc.ui.pub.bill.BillListPanel;
 import nc.ui.xjjc.ref.voucher.OtherAircorpRefModel;
+import nc.ui.xjjc.ref.voucher.OtherChargePrjRefModel;
 import nc.ui.xjjc.ref.voucher.OtherCustomerRefModel;
 import nc.ui.xjjc.ref.voucher.OtherDeptRefModel;
+import nc.ui.xjjc.ref.voucher.OtherRentPrjRefModel;
 import nc.ui.xjjc.ref.voucher.OtherVehicleTypeRefModel;
 import nc.vo.logging.Debug;
 import nc.vo.ml.NCLangRes4VoTransl;
@@ -794,7 +796,9 @@ public class SubjAssMap extends ToftPanel implements TreeSelectionListener,
 		/* 加载数据 */
 		strWhere = AssValueMapVO.PK_CORP+" = '" + getPKCorp() + "' and "+AssValueMapVO.PK_USEDFREEVALUE+" = '"
 					+ m_curPk_usedfreevalue +"'";
-		if (!m_curPk_usedfreevalue.equals(UsedFreeValue.DEPARTMENT.getValue()) && comboAirport.getRefCode()!=null && comboAirport.getRefCode().length()>0)
+		if (!m_curPk_usedfreevalue.equals(UsedFreeValue.DEPARTMENT.getValue()) 
+				&& !m_curPk_usedfreevalue.equals(UsedFreeValue.RENTDEPARTMENT.getValue())
+				&& comboAirport.getRefCode()!=null && comboAirport.getRefCode().length()>0)
 			strWhere +=" and "+AssValueMapVO.VOTHERBIZ+"='"+comboAirport.getRefCode()+"'";
 		strWhere +=" order by "+AssValueMapVO.VOTHERBIZ+","+AssValueMapVO.VOTHERCODE;
 
@@ -976,6 +980,8 @@ public class SubjAssMap extends ToftPanel implements TreeSelectionListener,
 			getBillCardPanel().getHeadItem(FAKEOBJ_ID).getComponent().setEnabled(true);
 			if(m_curPk_usedfreevalue.equals(UsedFreeValue.DEPARTMENT.getValue())) 
 				getBillCardPanel().getHeadItem(FAKEOBJ_ID).setRefType("<"+OtherDeptRefModel.class.getName()+">"); //部门辅助项
+			if(m_curPk_usedfreevalue.equals(UsedFreeValue.RENTDEPARTMENT.getValue())) 
+				getBillCardPanel().getHeadItem(FAKEOBJ_ID).setRefType("<"+OtherRentPrjRefModel.class.getName()+">"); //租赁主营收入部门辅助项
 			else if(m_curPk_usedfreevalue.equals(UsedFreeValue.AIRLINE.getValue()))
 				getBillCardPanel().getHeadItem(FAKEOBJ_ID).setRefType("<"+OtherAircorpRefModel.class.getName()+">"); //航空公司辅助项
 			else if(m_curPk_usedfreevalue.equals(UsedFreeValue.CUSTOMER.getValue()))

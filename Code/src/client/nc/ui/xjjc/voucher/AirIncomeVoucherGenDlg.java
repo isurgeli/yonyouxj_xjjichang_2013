@@ -421,6 +421,11 @@ public class AirIncomeVoucherGenDlg extends UIDialog implements ActionListener, 
 			}
 		}
 		
+		if (airCorps==null){
+			MessageDialog.showWarningDlg(null, null, "请先获取开票对象。");
+			return;
+		}
+		
 		IAirIncomeVoucherDataService service = NCLocator.getInstance().lookup(IAirIncomeVoucherDataService.class);
 		String pk_voucherType = getRefVoucherType().getRefPK();
 		String explain = getTextExplain().getText();
@@ -432,7 +437,10 @@ public class AirIncomeVoucherGenDlg extends UIDialog implements ActionListener, 
 				selectAirCorp.add(airCorps[i].getCode());
 				if (airCorps[i].getType()==2) haveForeign = true;
 			}
-		
+		if (selectAirCorp.size()==0){
+			MessageDialog.showWarningDlg(null, null, "请选择至少一个需要开票的对象。");
+			return;
+		}
 		boolean useDollar = false;
 		
 		if (haveForeign){

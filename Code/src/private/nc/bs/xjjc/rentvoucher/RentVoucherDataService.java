@@ -46,6 +46,8 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 		rentData.clear();
 		voucherMap.clear();
 		errors.clear();
+		subjMap.clear();
+		subjAssMap.clear();
 		
 		UFDate startDate = new UFDate(sAccMonth+"-01");
 		UFDate endDate = new UFDate(eAccMonth+"-01");
@@ -76,25 +78,71 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 			
 			// 应收，收入，预收，现金变动金额汇总
 			for(RentItemDataValue contract : contracts){
+//				if (contract.paid.doubleValue()>0)
+//					contract.cashSubjAmount = contract.paid;
+//				
+//				if (contract.income.doubleValue()>0)
+//					contract.incomeSubjAmount = contract.income.multiply(-1);
+//				
+//				if (contract.paid.doubleValue() > contract.income.doubleValue()){ //本月付款大于收入
+//					if (contract.paid.sub(contract.income).doubleValue() > contract.suspended.doubleValue()) {//多出金额够冲所有应收
+//						contract.suspendSubjAmount = contract.suspended.multiply(-1);
+//						contract.advanceSubjAmount = contract.paid.sub(contract.income).sub(contract.suspended).multiply(-1);
+//					}else{
+//						contract.suspendSubjAmount = contract.paid.sub(contract.income).multiply(-1);
+//					}
+//				}else if(contract.paid.doubleValue() < contract.income.doubleValue()){ //本月付款小于收入
+//					if (contract.suspended.multiply(-1).doubleValue() > contract.income.sub(contract.paid).doubleValue()) {//预收款多于本月不足款项
+//						contract.advanceSubjAmount = contract.income.sub(contract.paid);
+//					}else{
+//						contract.advanceSubjAmount = contract.suspended.multiply(-1);
+//						contract.suspendSubjAmount = contract.income.sub(contract.paid).sub(contract.suspended.multiply(-1));
+//					}
+//				}
+				
 				if (contract.paid.doubleValue()>0)
-					contract.cashSubjAmount = contract.paid;
+					contract.cashSubjAmount.add(contract.paid);
 				
-				if (contract.income.doubleValue()>0)
-					contract.incomeSubjAmount = contract.income.multiply(-1);
-				
-				if (contract.paid.doubleValue() > contract.income.doubleValue()){ //本月付款大于收入
-					if (contract.paid.sub(contract.income).doubleValue() > contract.suspended.doubleValue()) {//多出金额够冲所有应收
-						contract.suspendSubjAmount = contract.suspended.multiply(-1);
-						contract.advanceSubjAmount = contract.paid.sub(contract.income).sub(contract.suspended).multiply(-1);
-					}else{
-						contract.suspendSubjAmount = contract.paid.sub(contract.income).multiply(-1);
+				if (contract.suspended.doubleValue()>0) { //存在累计应收
+					if (contract.paid.doubleValue() >= contract.suspended.add(contract.income).doubleValue()){ //本月付款大于累计应收+本月主营
+						contract.suspendSubjAmount.add(contract.suspended.multiply(-1)); // 冲掉所有应收
+						contract.incomeSubjAmount.add(contract.income.multiply(-1)); // 冲掉所有本期主营
+						contract.advanceSubjAmount.add(contract.paid.sub(contract.suspended).sub(contract.income).multiply(-1)); // 剩余金额进入预收
+					} else if (contract.paid.doubleValue() >= contract.suspended.doubleValue()){ //本月付款大于累计应收
+						contract.suspendSubjAmount.add(contract.suspended.multiply(-1)); // 冲掉所有应收
+						contract.incomeSubjAmount.add(contract.paid.sub(contract.suspended).multiply(-1)); // 用剩余付款金额冲部分本期主营
+						contract.incomeSubjAmount.add(contract.income.sub(contract.paid.sub(contract.suspended)).multiply(-1)); // 处理剩余主营
+						contract.suspendSubjAmount.add(contract.income.sub(contract.paid.sub(contract.suspended))); // 处理剩余主营进入应收
+					} else {
+						contract.suspendSubjAmount.add(contract.paid.multiply(-1)); // 冲掉部分应收
+						contract.incomeSubjAmount.add(contract.income.multiply(-1)); // 处理主营
+						contract.suspendSubjAmount.add(contract.income); // 处理主营进入应收
 					}
-				}else if(contract.paid.doubleValue() < contract.income.doubleValue()){ //本月付款小于收入
-					if (contract.suspended.multiply(-1).doubleValue() > contract.income.sub(contract.paid).doubleValue()) {//预收款多于本月不足款项
-						contract.advanceSubjAmount = contract.income.sub(contract.paid);
-					}else{
-						contract.advanceSubjAmount = contract.suspended.multiply(-1);
-						contract.suspendSubjAmount = contract.income.sub(contract.paid).sub(contract.suspended.multiply(-1));
+				} else if (contract.advanced.doubleValue()>0) {//存在预收
+					if (contract.advanced.doubleValue() >= contract.income.doubleValue()){ //预收余额大于本月主营
+						contract.advanceSubjAmount.add(contract.income); // 用预收冲掉本期主营
+						contract.incomeSubjAmount.add(contract.income.multiply(-1));
+						contract.advanceSubjAmount.add(contract.paid.multiply(-1)); // 付款全部进入预收
+					} else if (contract.advanced.add(contract.paid).doubleValue() >= contract.income.doubleValue()){ //预收余额+收入大于本月主营
+						contract.advanceSubjAmount.add(contract.advanced); // 用全部预收冲部分主营
+						contract.incomeSubjAmount.add(contract.advanced.multiply(-1));
+						contract.incomeSubjAmount.add(contract.income.sub(contract.advanced).multiply(-1)); //用付款冲剩余主营
+						contract.advanceSubjAmount.add(contract.paid.sub(contract.income.sub(contract.advanced)).multiply(-1));//剩余付款进入预收
+					} else {
+						contract.advanceSubjAmount.add(contract.advanced); // 用全部预收冲部分主营
+						contract.incomeSubjAmount.add(contract.advanced.multiply(-1));
+						contract.incomeSubjAmount.add(contract.paid.multiply(-1)); // 用全部付款冲部分主营
+						contract.incomeSubjAmount.add(contract.income.sub(contract.advanced).sub(contract.paid).multiply(-1)); // 剩余主营进入应收
+						contract.suspendSubjAmount.add(contract.income.sub(contract.advanced).sub(contract.paid));
+					}
+				} else { //没有应收与预收
+					if (contract.paid.doubleValue() >= contract.income.doubleValue()){ //本月付款大于本月主营
+						contract.incomeSubjAmount.add(contract.income.multiply(-1)); // 用付款冲所有主营
+						contract.advanceSubjAmount.add(contract.paid.sub(contract.income).multiply(-1)); //剩余付款进入预收
+					} else {
+						contract.incomeSubjAmount.add(contract.paid.multiply(-1)); // 用付款冲部分主营
+						contract.incomeSubjAmount.add(contract.income.sub(contract.paid).multiply(-1)); // 剩余主营进入应收
+						contract.suspendSubjAmount.add(contract.income.sub(contract.paid));
 					}
 				}
 			}
@@ -102,14 +150,17 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 			// 生成相应凭证分录，正为借，负为贷
 			for(RentItemDataValue contract : contracts){
 				VoucherVO voucher = getRentPeriodVoucherVO(contract, pk_voucherType, explain, pk_user, date);
-				voucher.setTotaldebit(voucher.getTotaldebit().add(contract.cashSubjAmount.doubleValue()>0?contract.cashSubjAmount:new UFDouble(0)));
-				voucher.setTotaldebit(voucher.getTotaldebit().add(contract.suspendSubjAmount.doubleValue()>0?contract.suspendSubjAmount:new UFDouble(0)));
-				voucher.setTotaldebit(voucher.getTotaldebit().add(contract.advanceSubjAmount.doubleValue()>0?contract.advanceSubjAmount:new UFDouble(0)));
+				ArrayList<UFDouble> allData = new ArrayList<UFDouble>();
+				allData.addAll(contract.cashSubjAmount);
+				allData.addAll(contract.suspendSubjAmount);
+				allData.addAll(contract.advanceSubjAmount);
+				allData.addAll(contract.incomeSubjAmount);
 				
-				voucher.setTotalcredit(voucher.getTotalcredit().add(contract.incomeSubjAmount.doubleValue()<0?contract.incomeSubjAmount.multiply(-1):new UFDouble(0)));
-				voucher.setTotalcredit(voucher.getTotalcredit().add(contract.suspendSubjAmount.doubleValue()<0?contract.suspendSubjAmount.multiply(-1):new UFDouble(0)));
-				voucher.setTotalcredit(voucher.getTotalcredit().add(contract.advanceSubjAmount.doubleValue()<0?contract.advanceSubjAmount.multiply(-1):new UFDouble(0)));
 				
+				for (UFDouble data : allData){
+					voucher.setTotaldebit(voucher.getTotaldebit().add(data.doubleValue()>0?data:new UFDouble(0)));
+					voucher.setTotalcredit(voucher.getTotalcredit().add(data.doubleValue()<0?data.multiply(-1):new UFDouble(0)));
+				}				
 				initDetailVOforVoucher(voucher, contract);
 			}
 			
@@ -119,7 +170,7 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 				if (voucher.getExplanation() == null)
 					voucher.setExplanation(((DetailVO)voucher.getDetail().get(0)).getExplanation());
 				if (voucher.getDetail()!=null && voucher.getDetail().size()>0){
-					Collections.sort(voucher.getDetail(), new RentDetailComparator());
+					//Collections.sort(voucher.getDetail(), new RentDetailComparator());
 					voucherBo.save(voucher, true);
 				}
 			}
@@ -135,32 +186,44 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 	private void initDetailVOforVoucher(VoucherVO voucher, RentItemDataValue contract) throws BusinessException {
 		String explain = "("+contract.payer+")"+contract.payerName+contract.getAirStation()+contract.period+"月场地租赁费("+contract.contractNo+")";
 		
-		if (contract.cashSubjAmount.doubleValue()!=0){
-			DetailVO debitVO = getNewDetailVO(voucher, contract.subjs.pk_cashsubj, contract.cashSubjAmount, "收："+explain);
-			debitVO.setCheckstyle("0001A110000000000AIU"); // TODO 结算方式主键
-			debitVO.setCheckno("100001"); // TODO 结算号
-			debitVO.setAccsubjcode(contract.subjs.getCashsubjcode());
-			initAssforDetail(debitVO, contract);
-			voucher.addDetail(debitVO);
+		for (UFDouble data : contract.cashSubjAmount){
+			if (data.doubleValue()!=0){
+				DetailVO debitVO = getNewDetailVO(voucher, contract.subjs.pk_cashsubj, data, "收："+explain);
+				debitVO.setCheckstyle("0001A110000000000AIU"); // TODO 结算方式主键
+				debitVO.setCheckno("100001"); // TODO 结算号
+				debitVO.setAccsubjcode(contract.subjs.getCashsubjcode());
+				initAssforDetail(debitVO, contract);
+				voucher.addDetail(debitVO);
+			}
 		}
-		if (contract.incomeSubjAmount.doubleValue()!=0){
-			DetailVO debitVO = getNewDetailVO(voucher, contract.subjs.pk_incomesubj, contract.incomeSubjAmount, "转："+explain);
-			debitVO.setAccsubjcode(contract.subjs.getIncomesubjcode());
-			initAssforDetail(debitVO, contract);
-			voucher.addDetail(debitVO);
+		
+		for (UFDouble data : contract.suspendSubjAmount){
+			if (data.doubleValue()!=0){
+				DetailVO debitVO = getNewDetailVO(voucher, contract.subjs.pk_suspendsubj, data, "转："+explain);
+				debitVO.setAccsubjcode(contract.subjs.getSuspendsubjcode());
+				initAssforDetail(debitVO, contract);
+				voucher.addDetail(debitVO);
+			}
 		}
-		if (contract.suspendSubjAmount.doubleValue()!=0){
-			DetailVO debitVO = getNewDetailVO(voucher, contract.subjs.pk_suspendsubj, contract.suspendSubjAmount, "转："+explain);
-			debitVO.setAccsubjcode(contract.subjs.getSuspendsubjcode());
-			initAssforDetail(debitVO, contract);
-			voucher.addDetail(debitVO);
+		
+		for (UFDouble data : contract.advanceSubjAmount){
+			if (data.doubleValue()!=0){
+				DetailVO debitVO = getNewDetailVO(voucher, contract.subjs.pk_advancesubj, data, "转："+explain);
+				debitVO.setAccsubjcode(contract.subjs.getAdvancesubjcode());
+				initAssforDetail(debitVO, contract);
+				voucher.addDetail(debitVO);
+			}
 		}
-		if (contract.advanceSubjAmount.doubleValue()!=0){
-			DetailVO debitVO = getNewDetailVO(voucher, contract.subjs.pk_advancesubj, contract.advanceSubjAmount, "转："+explain);
-			debitVO.setAccsubjcode(contract.subjs.getAdvancesubjcode());
-			initAssforDetail(debitVO, contract);
-			voucher.addDetail(debitVO);
+		
+		for (UFDouble data : contract.incomeSubjAmount){
+			if (data.doubleValue()!=0){
+				DetailVO debitVO = getNewDetailVO(voucher, contract.subjs.pk_incomesubj, data, "转："+explain);
+				debitVO.setAccsubjcode(contract.subjs.getIncomesubjcode());
+				initAssforDetail(debitVO, contract);
+				voucher.addDetail(debitVO);
+			}
 		}
+		
 	}
 
 	private void initAssforDetail(DetailVO debitVO, RentItemDataValue contract) throws BusinessException {
@@ -251,7 +314,7 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 			voucher.setPk_manager("N/A"); //记账人主键
 			voucher.setSignflag(new UFBoolean(false)); //签字标志
 			voucher.setModifyflag("YYY"); //凭证修改标志
-			voucher.setDetailmodflag(new UFBoolean(false)); //分录增删标志
+			voucher.setDetailmodflag(new UFBoolean(true)); //分录增删标志
 			voucher.setDiscardflag(new UFBoolean(false)); //作废标志
 			voucher.setPk_system("GL"); //制单系统主键
 			voucher.setAddclass(null); //增加接口类
@@ -368,6 +431,13 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 						new UFDouble(alreadypay.get(1).toString()));
 			}
 		}
+		
+		for(RentItemDataValue contract : contracts){
+			if (contract.suspended.doubleValue()<0) {
+				contract.advanced = contract.suspended.multiply(-1);
+				contract.suspended = new UFDouble(0);
+			}
+		}
 	}
 
 	private void initSubjandAss(RentItemDataValue[] contracts) throws BusinessException {
@@ -416,7 +486,7 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 					if (subjAssVO.getPk_bdinfo().equals(BDInfo.CUSTOMER.getValue()))
 						otherAssCode = contract.payer;
 					else if (subjAssVO.getPk_bdinfo().equals(BDInfo.DEPARTMENT.getValue()))
-						otherAssCode = "URC";
+						otherAssCode = contract.prjCode;
 					else if (subjAssVO.getPk_bdinfo().equals(BDInfo.CONTRACT.getValue())){
 						otherAssCode = null;
 						assVO.setPk_Checkvalue(contract.getContractAss().getPrimaryKey());

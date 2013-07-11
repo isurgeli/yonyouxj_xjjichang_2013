@@ -1,5 +1,6 @@
 package nc.bs.xjjc.rentvoucher;
 
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -17,7 +18,7 @@ public class RentItemDataValue {
 	public UFDouble income;
 	public UFDouble paid;
 	public UFDouble suspended;
-	//public UFDouble advanced;
+	public UFDouble advanced;
 	
 	public String contractNo;
 	public String payer;
@@ -25,10 +26,10 @@ public class RentItemDataValue {
 	public String period;
 	public String payerName;
 	
-	public UFDouble cashSubjAmount;
-	public UFDouble incomeSubjAmount;
-	public UFDouble suspendSubjAmount;
-	public UFDouble advanceSubjAmount;
+	public ArrayList<UFDouble> cashSubjAmount;
+	public ArrayList<UFDouble> incomeSubjAmount;
+	public ArrayList<UFDouble> suspendSubjAmount;
+	public ArrayList<UFDouble> advanceSubjAmount;
 	
 	public RentAccsubjValue subjs;
 	public Hashtable<String, AssVO> ass = new Hashtable<String, AssVO>();
@@ -46,12 +47,12 @@ public class RentItemDataValue {
 		income = new UFDouble(0);
 		paid = new UFDouble(0);
 		suspended = new UFDouble(0);
-		//advanced = new UFDouble(0);
+		advanced = new UFDouble(0);
 		
-		cashSubjAmount = new UFDouble(0);
-		incomeSubjAmount = new UFDouble(0);
-		suspendSubjAmount = new UFDouble(0);
-		advanceSubjAmount = new UFDouble(0);
+		cashSubjAmount = new ArrayList<UFDouble>();
+		incomeSubjAmount = new ArrayList<UFDouble>();
+		suspendSubjAmount = new ArrayList<UFDouble>();
+		advanceSubjAmount = new ArrayList<UFDouble>();
 		
 		Assert.notNull(_period);
 	}
