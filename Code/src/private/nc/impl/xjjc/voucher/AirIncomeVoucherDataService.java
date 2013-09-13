@@ -176,7 +176,7 @@ public class AirIncomeVoucherDataService implements
 			
 			VoucherVO[] vouchers = voucherMap.values().toArray(new VoucherVO[0]);
 			IVoucher voucherBo = NCLocator.getInstance().lookup(IVoucher.class);
-			for(VoucherVO voucher : vouchers){
+			for(VoucherVO voucher : vouchers){	
 				if (voucher.getExplanation() == null)
 					voucher.setExplanation(((DetailVO)voucher.getDetail().get(0)).getExplanation());
 				if (voucher.getDetail()!=null && voucher.getDetail().size()>0){
@@ -185,6 +185,7 @@ public class AirIncomeVoucherDataService implements
 						voucher.getDetail(idx).setFreevalue29(null);
 					}
 					Collections.sort(voucher.getDetail(), new AirDetailComparator());
+					doBalanceForVoucher(voucher);
 					voucherBo.save(voucher, true);
 					
 					ArrayList<InvoiceValue> invoiceInfos = voucherInvoiceMap.get(voucher);
@@ -212,6 +213,36 @@ public class AirIncomeVoucherDataService implements
 		}
 		
 		return retVO.toArray(new FakeVoucherVO[0]);
+	}
+
+	private void doBalanceForVoucher(VoucherVO voucher) {
+		if (voucher.getDetail()!=null && voucher.getDetail().size()>0){
+			UFDouble creditAmount=new UFDouble(0);
+			UFDouble debitAmount=new UFDouble(0);
+			for(int idx=0;idx<voucher.getDetail().size();idx++){
+				if (voucher.getDetail(idx).getDirection())
+					debitAmount = debitAmount.add(voucher.getDetail(idx).getLocaldebitamount());
+				else
+					creditAmount = creditAmount.add(voucher.getDetail(idx).getLocalcreditamount());
+			}
+			if (creditAmount.compareTo(debitAmount)!=0){
+				String pk_accsubj = "0001A110000000008CO4";
+				AssVO[] ass = new AssVO[1];
+				ass[0] = new AssVO();
+				ass[0].setPk_Checktype("0001A1100000000001GH");
+				ass[0].setPk_Checkvalue("1022A1100000000000QO");
+				ass[0].setCheckvaluecode("03");
+				ass[0].setCheckvaluename("收入管理中心");
+				
+				DetailVO taxDetail = getNewDetailVO(voucher, pk_accsubj, "销项税", ass, false, new UFDouble(1), null);
+				taxDetail.setDirection("C");
+				taxDetail.setAccsubjcode("22210305");
+				taxDetail.setAss(ass);
+				detailAddCreditAmount(debitAmount.sub(creditAmount), false, new UFDouble(1), taxDetail);
+				
+				voucher.addDetail(taxDetail);
+			}
+		}
 	}
 
 	private VoucherVO getAirlinePeriodVoucherVO(String airline, String period, String pk_voucherType, 
@@ -296,6 +327,7 @@ public class AirIncomeVoucherDataService implements
 			subjvalue.pk_debitsubj = subjMapVOs[0].getPk_debitsubj();
 			subjvalue.creditSubjCode = creditSubjVO.getSubjcode();
 			subjvalue.debitSubjCode = debitSubjVO.getSubjcode();
+			subjvalue.taxRate = subjMapVOs[0].getNtaxrate()==null?new UFDouble(0.06):subjMapVOs[0].getNtaxrate();
 			
 			subjMap.put(airport+chargePrjCode, subjvalue);
 		}
@@ -320,6 +352,9 @@ public class AirIncomeVoucherDataService implements
 			else
 				debitExplain+="（航空公司）";
 			
+			UFDouble noTaxAmount = amount;
+			if (!useDollar)
+				noTaxAmount = amount.div(subjMap.get(airport+chargePrjCode).taxRate.add(1));
 			{
 				AssVO[] debitAss = initAssforDetail(pk_accsubjdebit, airport, airline, chargePrjCode, isClearCenter);
 				DetailVO debitVO = findDebitDetailbyAccsubjExplain(voucher, pk_accsubjdebit, debitExplain, debitAss, invoiceName);
@@ -338,18 +373,18 @@ public class AirIncomeVoucherDataService implements
 			}
 			{
 				AssVO[] creditAss = initAssforDetail(pk_accsubjcredit, airport, airline, chargePrjCode, isClearCenter);
-				DetailVO creditVO = findCreditDetailbyAccsubjExplain(voucher, pk_accsubjcredit, creditExplain, creditAss, amount);
+				DetailVO creditVO = findCreditDetailbyAccsubjExplain(voucher, pk_accsubjcredit, creditExplain, creditAss, noTaxAmount);
 				
 				if (creditVO==null){
 					creditVO = getNewDetailVO(voucher, pk_accsubjcredit, creditExplain, creditAss, useDollar, raito, "");
 					creditVO.setDirection("C");
 					creditVO.setAccsubjcode(accsubjcreditCode);
 					creditVO.setAss(creditAss);
-					detailAddCreditAmount(amount, useDollar, raito, creditVO);
+					detailAddCreditAmount(noTaxAmount, useDollar, raito, creditVO);
 					voucher.addDetail(creditVO);
 				//	creditVO = findDetailbyAccsubjExplain(voucher, pk_accsubjcredit, creditExplain, creditAss, amount);
 				}else{
-					detailAddCreditAmount(amount, useDollar, raito, creditVO);
+					detailAddCreditAmount(noTaxAmount, useDollar, raito, creditVO);
 				}
 			}
 		}

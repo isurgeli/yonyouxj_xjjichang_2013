@@ -32,6 +32,7 @@ public class SubjMapVO extends SuperVO {
 	private java.lang.String currency;
 	private java.lang.String pk_suspendsubj;
 	private java.lang.String pk_advancesubj;
+	private nc.vo.pub.lang.UFDouble ntaxrate;
 	private java.lang.Integer dr;
 	private nc.vo.pub.lang.UFDateTime ts;
 
@@ -49,6 +50,7 @@ public class SubjMapVO extends SuperVO {
 	public static final String CURRENCY = "currency";
 	public static final String PK_SUSPENDSUBJ = "pk_suspendsubj";
 	public static final String PK_ADVANCESUBJ = "pk_advancesubj";
+	public static final String NTAXRATE = "ntaxrate";
 			
 	/**
 	 * 属性pk_subjmap的Getter方法.
@@ -273,6 +275,22 @@ public class SubjMapVO extends SuperVO {
 	 */
 	public void setPk_advancesubj (java.lang.String newPk_advancesubj ) {
 	 	this.pk_advancesubj = newPk_advancesubj;
+	} 	  
+	/**
+	 * 属性ntaxrate的Getter方法.
+	 * 创建日期:2013-04-26 15:13:53
+	 * @return nc.vo.pub.lang.UFDouble
+	 */
+	public nc.vo.pub.lang.UFDouble getNtaxrate () {
+		return ntaxrate;
+	}   
+	/**
+	 * 属性ntaxrate的Setter方法.
+	 * 创建日期:2013-04-26 15:13:53
+	 * @param newNtaxrate nc.vo.pub.lang.UFDouble
+	 */
+	public void setNtaxrate (nc.vo.pub.lang.UFDouble newNtaxrate ) {
+	 	this.ntaxrate = newNtaxrate;
 	} 	  
 	/**
 	 * 属性dr的Getter方法.

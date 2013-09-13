@@ -15,7 +15,9 @@ import nc.vo.pub.BusinessException;
 import nc.vo.pub.lang.UFDouble;
 
 public class RentItemDataValue {
+	public ArrayList<UFDouble> paidItems;
 	public UFDouble income;
+	public UFDouble tax;
 	public UFDouble paid;
 	public UFDouble suspended;
 	public UFDouble advanced;
@@ -27,6 +29,7 @@ public class RentItemDataValue {
 	public String payerName;
 	
 	public ArrayList<UFDouble> cashSubjAmount;
+	public ArrayList<UFDouble> taxSubjAmount;
 	public ArrayList<UFDouble> incomeSubjAmount;
 	public ArrayList<UFDouble> suspendSubjAmount;
 	public ArrayList<UFDouble> advanceSubjAmount;
@@ -53,6 +56,9 @@ public class RentItemDataValue {
 		incomeSubjAmount = new ArrayList<UFDouble>();
 		suspendSubjAmount = new ArrayList<UFDouble>();
 		advanceSubjAmount = new ArrayList<UFDouble>();
+		taxSubjAmount = new ArrayList<UFDouble>(); 
+		
+		paidItems = new ArrayList<UFDouble>();
 		
 		Assert.notNull(_period);
 	}

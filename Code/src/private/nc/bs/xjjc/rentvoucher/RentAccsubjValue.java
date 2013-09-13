@@ -7,6 +7,7 @@ import nc.bs.dao.DAOException;
 import nc.jdbc.framework.processor.VectorProcessor;
 import nc.vo.logging.Debug;
 import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDouble;
 
 public class RentAccsubjValue {
 	public String pk_cashsubj;
@@ -14,6 +15,7 @@ public class RentAccsubjValue {
 	public String pk_suspendsubj;
 	public String pk_advancesubj;
 	
+	public UFDouble taxRate;
 	
 	private String cashsubjcode;
 	private String incomesubjcode;

@@ -2,7 +2,6 @@ package nc.bs.xjjc.rentvoucher;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -76,32 +75,16 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 				throw new BusinessException(errmsg.toString());
 			}
 			
+			doTaxAdjust(contracts);
+			
 			// 应收，收入，预收，现金变动金额汇总
-			for(RentItemDataValue contract : contracts){
-//				if (contract.paid.doubleValue()>0)
-//					contract.cashSubjAmount = contract.paid;
-//				
-//				if (contract.income.doubleValue()>0)
-//					contract.incomeSubjAmount = contract.income.multiply(-1);
-//				
-//				if (contract.paid.doubleValue() > contract.income.doubleValue()){ //本月付款大于收入
-//					if (contract.paid.sub(contract.income).doubleValue() > contract.suspended.doubleValue()) {//多出金额够冲所有应收
-//						contract.suspendSubjAmount = contract.suspended.multiply(-1);
-//						contract.advanceSubjAmount = contract.paid.sub(contract.income).sub(contract.suspended).multiply(-1);
-//					}else{
-//						contract.suspendSubjAmount = contract.paid.sub(contract.income).multiply(-1);
-//					}
-//				}else if(contract.paid.doubleValue() < contract.income.doubleValue()){ //本月付款小于收入
-//					if (contract.suspended.multiply(-1).doubleValue() > contract.income.sub(contract.paid).doubleValue()) {//预收款多于本月不足款项
-//						contract.advanceSubjAmount = contract.income.sub(contract.paid);
-//					}else{
-//						contract.advanceSubjAmount = contract.suspended.multiply(-1);
-//						contract.suspendSubjAmount = contract.income.sub(contract.paid).sub(contract.suspended.multiply(-1));
-//					}
-//				}
-				
-				if (contract.paid.doubleValue()>0)
-					contract.cashSubjAmount.add(contract.paid);
+			for(RentItemDataValue contract : contracts){			
+				if (contract.paid.doubleValue()>0){
+					for(UFDouble paidItem : contract.paidItems)
+						contract.cashSubjAmount.add(paidItem);
+					
+					contract.taxSubjAmount.add(contract.tax.multiply(-1));
+				}
 				
 				if (contract.suspended.doubleValue()>0) { //存在累计应收
 					if (contract.paid.doubleValue() >= contract.suspended.add(contract.income).doubleValue()){ //本月付款大于累计应收+本月主营
@@ -155,7 +138,7 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 				allData.addAll(contract.suspendSubjAmount);
 				allData.addAll(contract.advanceSubjAmount);
 				allData.addAll(contract.incomeSubjAmount);
-				
+				allData.addAll(contract.taxSubjAmount);
 				
 				for (UFDouble data : allData){
 					voucher.setTotaldebit(voucher.getTotaldebit().add(data.doubleValue()>0?data:new UFDouble(0)));
@@ -181,6 +164,19 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 			throw new BusinessException(e);
 		}
 		return true;
+	}
+
+	private void doTaxAdjust(RentItemDataValue[] contracts) {
+		for(RentItemDataValue contract : contracts){
+			contract.tax = UFDouble.ZERO_DBL;
+			if (contract.subjs.taxRate.doubleValue() > 0) {
+				contract.tax = contract.paid.div(contract.subjs.taxRate.add(1)).multiply(contract.subjs.taxRate);
+				contract.paid = contract.paid.div(contract.subjs.taxRate.add(1));
+				contract.advanced = contract.advanced.div(contract.subjs.taxRate.add(1));
+				contract.suspended = contract.suspended.div(contract.subjs.taxRate.add(1));
+				contract.income = contract.income.div(contract.subjs.taxRate.add(1)); 
+			}
+		}
 	}
 
 	private void initDetailVOforVoucher(VoucherVO voucher, RentItemDataValue contract) throws BusinessException {
@@ -224,6 +220,20 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 			}
 		}
 		
+		for (UFDouble data : contract.taxSubjAmount){
+			if (data.doubleValue()!=0){
+				DetailVO debitVO = getNewDetailVO(voucher, "0001A110000000008CO4", data, "销项税");
+				debitVO.setAccsubjcode("22210305");
+				AssVO[] ass = new AssVO[1];
+				ass[0] = new AssVO();
+				ass[0].setPk_Checktype("0001A1100000000001GH");
+				ass[0].setPk_Checkvalue("1022A1100000000000QO");
+				ass[0].setCheckvaluecode("03");
+				ass[0].setCheckvaluename("收入管理中心");
+				debitVO.setAss(ass);
+				voucher.addDetail(debitVO);
+			}
+		}
 	}
 
 	private void initAssforDetail(DetailVO debitVO, RentItemDataValue contract) throws BusinessException {
@@ -293,7 +303,7 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 	private VoucherVO getRentPeriodVoucherVO(RentItemDataValue contract,
 			String pk_voucherType, String explain, String pk_user, UFDate date) throws BusinessException {
 		VoucherVO voucher = null;
-		if (!voucherMap.containsKey(contract.getAirStation())){ // 凭证生成条件
+		if (!voucherMap.containsKey(contract.getAirStation()+String.valueOf(contract.subjs.taxRate.doubleValue()==0))){ // 凭证生成条件
 			voucher = new VoucherVO();
 			voucher.setPk_voucher(null); //凭证主键
 			voucher.setPk_vouchertype(pk_voucherType); //凭证类别主键
@@ -335,9 +345,9 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 			voucher.setPk_glbook(books[0].getPk_glbook()); //会计账簿
 			voucher.setPk_glorgbook(books[0].getPrimaryKey());
 			
-			voucherMap.put(contract.getAirStation(), voucher); // 凭证条件
+			voucherMap.put(contract.getAirStation()+String.valueOf(contract.subjs.taxRate.doubleValue()==0), voucher); // 凭证条件
 		}else{ 
-			voucher = voucherMap.get(contract.getAirStation()); // 凭证条件
+			voucher = voucherMap.get(contract.getAirStation()+String.valueOf(contract.subjs.taxRate.doubleValue()==0)); // 凭证条件
 		}
 		
 		return voucher;
@@ -385,10 +395,12 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 						pay.get(1).toString(),pay.get(2).toString(),sAccMonth.substring(0,7),
 						pay.get(4).toString());
 				itemValue.paid = itemValue.paid.add(new UFDouble(pay.get(3).toString()));
+				itemValue.paidItems.add(new UFDouble(pay.get(3).toString()));
 				rentData.put(pay.get(0).toString(), itemValue);
 			}else{
 				rentData.get(pay.get(0).toString()).paid = rentData.get(pay.get(0).toString()).paid.add(
 						new UFDouble(pay.get(3).toString()));
+				rentData.get(pay.get(0).toString()).paidItems.add(new UFDouble(pay.get(3).toString()));
 			}
 		}
 	}
@@ -457,6 +469,7 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 					subjvalue.pk_suspendsubj = subjMapVOs[0].getPk_suspendsubj();
 					subjvalue.pk_advancesubj = subjMapVOs[0].getPk_advancesubj();
 					subjvalue.pk_incomesubj = subjMapVOs[0].getPk_creditsubj();
+					subjvalue.taxRate = subjMapVOs[0].getNtaxrate()==null?new UFDouble(0):subjMapVOs[0].getNtaxrate();
 				
 					subjMap.put(contract.prjCode, subjvalue);
 				}
