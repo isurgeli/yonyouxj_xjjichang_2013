@@ -2,13 +2,10 @@ package nc.bs.xjjc.rentvoucher;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
-import java.util.Vector;
 
 import org.springframework.util.Assert;
 
 import nc.bs.dao.BaseDAO;
-import nc.bs.dao.DAOException;
-import nc.jdbc.framework.processor.VectorProcessor;
 import nc.vo.bd.b38.JobbasfilVO;
 import nc.vo.glcom.ass.AssVO;
 import nc.vo.pub.BusinessException;

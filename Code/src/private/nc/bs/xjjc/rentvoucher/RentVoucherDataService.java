@@ -75,7 +75,7 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 				throw new BusinessException(errmsg.toString());
 			}
 			
-			doTaxAdjust(contracts);
+			//doQZFSTaxAdjust(contracts);
 			
 			// 应收，收入，预收，现金变动金额汇总
 			for(RentItemDataValue contract : contracts){			
@@ -83,7 +83,7 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 					for(UFDouble paidItem : contract.paidItems)
 						contract.cashSubjAmount.add(paidItem);
 					
-					contract.taxSubjAmount.add(contract.tax.multiply(-1));
+					//contract.taxSubjAmount.add(contract.tax.multiply(-1));
 				}
 				
 				if (contract.suspended.doubleValue()>0) { //存在累计应收
@@ -130,6 +130,8 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 				}
 			}
 			
+			doSFSXTaxAdjust(contracts);
+			
 			// 生成相应凭证分录，正为借，负为贷
 			for(RentItemDataValue contract : contracts){
 				VoucherVO voucher = getRentPeriodVoucherVO(contract, pk_voucherType, explain, pk_user, date);
@@ -166,15 +168,28 @@ public class RentVoucherDataService implements IRentVoucherDataService {
 		return true;
 	}
 
-	private void doTaxAdjust(RentItemDataValue[] contracts) {
+//	private void doQZFSTaxAdjust(RentItemDataValue[] contracts) {
+//		for(RentItemDataValue contract : contracts){
+//			contract.tax = UFDouble.ZERO_DBL;
+//			if (contract.subjs.taxRate.doubleValue() > 0) {
+//				contract.tax = contract.paid.div(contract.subjs.taxRate.add(1)).multiply(contract.subjs.taxRate);
+//				contract.paid = contract.paid.div(contract.subjs.taxRate.add(1));
+//				contract.advanced = contract.advanced.div(contract.subjs.taxRate.add(1));
+//				contract.suspended = contract.suspended.div(contract.subjs.taxRate.add(1));
+//				contract.income = contract.income.div(contract.subjs.taxRate.add(1)); 
+//			}
+//		}
+//	}
+	
+	private void doSFSXTaxAdjust(RentItemDataValue[] contracts) {
 		for(RentItemDataValue contract : contracts){
 			contract.tax = UFDouble.ZERO_DBL;
-			if (contract.subjs.taxRate.doubleValue() > 0) {
-				contract.tax = contract.paid.div(contract.subjs.taxRate.add(1)).multiply(contract.subjs.taxRate);
-				contract.paid = contract.paid.div(contract.subjs.taxRate.add(1));
-				contract.advanced = contract.advanced.div(contract.subjs.taxRate.add(1));
-				contract.suspended = contract.suspended.div(contract.subjs.taxRate.add(1));
-				contract.income = contract.income.div(contract.subjs.taxRate.add(1)); 
+			if (contract.subjs.taxRate.doubleValue() > 0 && contract.income.doubleValue()>0) {
+				contract.tax = contract.income.div(contract.subjs.taxRate.add(1)).multiply(contract.subjs.taxRate);
+				for (int i=0;i<contract.incomeSubjAmount.size();i++){
+					contract.incomeSubjAmount.set(i, contract.incomeSubjAmount.get(i).div(contract.subjs.taxRate.add(1)));
+				}
+				contract.taxSubjAmount.add(contract.tax.multiply(-1));
 			}
 		}
 	}
